@@ -35,6 +35,7 @@
     "PORT",
     "PREFIX",
     "DATABASE_URL",
+    "DISCORD_TOKEN",
     "NODE_ENV",
     "SKIP_ENV_VALIDATION",
     "LEMON_SQUEEZY_URL",
