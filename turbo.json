@@ -3,6 +3,10 @@
   "ui": "tui",
   "globalDependencies": ["**/.env.production", "**/.env.development", "**/.env.local"],
   "tasks": {
+    "db:generate": {
+      "inputs": ["prisma/schema.prisma"],
+      "cache": false
+    },
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
