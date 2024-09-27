@@ -17,15 +17,15 @@
   },
   "dependencies": {
     "@discord-bot/api": "workspace:*",
-    "@trpc/client": "^10.20.0",
+    "@trpc/client": "^10.45.2",
     "discord.js": "^14.7.1",
     "superjson": "2.2.1"
   },
   "devDependencies": {
     "@discord-bot/eslint-config": "workspace:*",
     "@types/node": "^22.5.5",
-    "dotenv-cli": "^7.2.1",
-    "eslint": "^8.38.0",
+    "dotenv-cli": "^7.4.2",
+    "eslint": "^8.57.0",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
     "typescript": "^5.6.2"

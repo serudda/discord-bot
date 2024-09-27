@@ -3,15 +3,18 @@
   "version": "0.0.0",
   "main": "index.js",
   "private": true,
+  "scripts": {
+    "clean": "git clean -xdf .next .turbo node_modules dist"
+  },
   "dependencies": {
     "@types/eslint": "^8.38.0",
+    "@typescript-eslint/eslint-plugin": "^8.7.0",
+    "@typescript-eslint/parser": "^8.7.0",
     "@vercel/style-guide": "^5.2.0",
-    "eslint-config-turbo": "^2.1.2",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-config-turbo": "^2.1.2",
     "eslint-plugin-only-warn": "^1.1.0",
-    "eslint-plugin-react": "7.36.1",
-    "@typescript-eslint/parser": "^8.6.0",
-    "@typescript-eslint/eslint-plugin": "^8.6.0"
+    "eslint-plugin-react": "7.36.1"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
