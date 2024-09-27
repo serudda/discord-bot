@@ -1,18 +1,39 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": ["**/.env.production", "**/.env.development", "**/.env.local"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
+      "outputs": []
     },
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "lint": {},
+    "lint:fix": {},
+    "clean": {
+      "cache": false
+    },
+    "//#clean": {
+      "cache": false
+    },
+    "type-check": {
+      "dependsOn": ["^db:generate"],
+      "cache": false
     }
-  }
+  },
+  "globalEnv": [
+    "CI",
+    "API_URL",
+    "PORT",
+    "PREFIX",
+    "DATABASE_URL",
+    "NODE_ENV",
+    "SKIP_ENV_VALIDATION",
+    "LEMON_SQUEEZY_URL",
+    "LEMON_SQUEEZY_API_KEY"
+  ]
 }
