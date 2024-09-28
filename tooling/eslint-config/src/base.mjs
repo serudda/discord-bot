@@ -15,9 +15,9 @@ export default [
       '.pnpm',
 
       // Build and distribution directories
-      '**/public**/',
-      '**/dist**/',
-      '**/.vercel**/',
+      '**/public/**',
+      '**/dist/**',
+      '**/.vercel/**',
 
       // Development tooling and configuration
       '.husky',
