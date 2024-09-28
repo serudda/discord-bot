@@ -1,4 +1,3 @@
-import { commandDispatcher } from '../commands/commandDispatcher';
 import { Message } from 'discord.js';
 
 export const onMessage = (message: Message) => {
@@ -9,6 +8,4 @@ export const onMessage = (message: Message) => {
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift()?.toLowerCase();
-
-  if (command) commandDispatcher(message, command);
 };

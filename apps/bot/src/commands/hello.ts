@@ -1,7 +1,11 @@
-import { Message, TextChannel } from 'discord.js';
+import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
 
-export const helloCommand = (message: Message) => {
-  if (message.channel instanceof TextChannel) {
-    message.channel.send(`Hello, ${message.author.username}!`);
-  }
+const command = {
+  data: new SlashCommandBuilder().setName('hello').setDescription('Responde con el nombre del usuario'),
+  execute: async (interaction: CommandInteraction) => {
+    console.log('Hello command executed');
+    await interaction.reply(`Hola ${interaction.user.username}!`);
+  },
 };
+
+export default command;

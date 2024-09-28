@@ -1,7 +1,10 @@
-import { Message, TextChannel } from 'discord.js';
+import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
 
-export const pingCommand = (message: Message) => {
-  if (message.channel instanceof TextChannel) {
-    message.channel.send('Pong! 🏓');
-  }
+const command = {
+  data: new SlashCommandBuilder().setName('ping').setDescription('Responde con Pong!'),
+  execute: async (interaction: CommandInteraction) => {
+    await interaction.reply('Pong!');
+  },
 };
+
+export default command;

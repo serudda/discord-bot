@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@discord-bot/api": "workspace:*",
+    "@discordjs/rest": "^2.4.0",
     "@trpc/client": "^10.45.2",
+    "discord-api-types": "^0.37.101",
     "discord.js": "^14.7.1",
     "superjson": "2.2.1"
   },

@@ -8,5 +8,4 @@ const client = new Client({
 
 client.once('ready', () => onReady(client));
 client.on('messageCreate', onMessage);
-
 client.login(process.env.DISCORD_TOKEN);
