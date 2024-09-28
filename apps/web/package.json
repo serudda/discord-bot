@@ -8,11 +8,17 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "clean": "git clean -xdf .next .turbo node_modules dist"
+    "clean": "git clean -xdf .turbo node_modules dist",
+    "lint": "eslint .",
+    "lint:fix": "pnpm lint --fix",
+    "type-check": "astro-check"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.3",
     "astro": "^4.15.9",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "@discord-bot/eslint-config": "workspace:*",
+    "@astrojs/ts-plugin": "^1.10.2",
+    "eslint": "^9.11.1"
   }
 }
