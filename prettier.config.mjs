@@ -2,7 +2,11 @@
 /** @typedef {import('prettier').Config} PrettierConfig */
 /** @typedef {{ tailwindConfig: string }} TailwindConfig */
 
-/** @type {PrettierConfig | SortImportsConfig | TailwindConfig} */
+/**
+ * @type {PrettierConfig
+ *   | SortImportsConfig
+ *   | TailwindConfig}
+ */
 const config = {
   arrowParens: 'always',
   bracketSpacing: true,
@@ -13,7 +17,7 @@ const config = {
   singleQuote: true,
   tabWidth: 2,
   trailingComma: 'all',
-  plugins: ['@ianvs/prettier-plugin-sort-imports', 'prettier-plugin-jsdoc'],
+  plugins: ['prettier-plugin-astro', '@ianvs/prettier-plugin-sort-imports', 'prettier-plugin-jsdoc'],
 
   /** JSdoc Plugin Config. */
   jsdocPrintWidth: 60,
@@ -39,6 +43,14 @@ const config = {
     '<THIRD_PARTY_MODULES>',
   ],
   importOrderParserPlugins: ['typescript', 'jsx', 'decorators-legacy'],
+  overrides: [
+    {
+      files: ['*.astro'],
+      options: {
+        parser: 'astro',
+      },
+    },
+  ],
 };
 
 export default config;
