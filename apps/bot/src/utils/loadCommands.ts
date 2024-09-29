@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { ClientWithComponents } from '../common';
+import { ClientWithComponents, Command } from '../common';
 import { Collection } from 'discord.js';
 
 export const loadCommands = async (client: ClientWithComponents) => {
@@ -11,7 +11,7 @@ export const loadCommands = async (client: ClientWithComponents) => {
 
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-    const command = await import(filePath);
+    const command = (await import(filePath)).default as Command;
     if ('data' in command && 'execute' in command) {
       client.commands.set(command.data.name, command);
     } else {

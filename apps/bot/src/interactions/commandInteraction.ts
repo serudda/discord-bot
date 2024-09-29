@@ -3,7 +3,6 @@ import { getComponent } from '../utils';
 import { CommandInteraction, PermissionsBitField } from 'discord.js';
 
 export async function commandHandler(interaction: CommandInteraction, client: ClientWithComponents): Promise<void> {
-  console.log('Command: ', { commandName: interaction.commandName });
   const component = getComponent(client, ComponentType.Commands, interaction.commandName);
 
   if (!component) {
