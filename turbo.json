@@ -3,6 +3,10 @@
   "ui": "tui",
   "globalDependencies": ["**/.env.production", "**/.env.development", "**/.env.local"],
   "tasks": {
+    "deploy-commands": {
+      "cache": false,
+      "persistent": true
+    },
     "db:generate": {
       "inputs": ["prisma/schema.prisma"],
       "cache": false
@@ -35,6 +39,8 @@
     "PORT",
     "PREFIX",
     "DATABASE_URL",
+    "DISCORD_APPLICATION_ID",
+    "DISCORD_SERVER_ID",
     "DISCORD_TOKEN",
     "NODE_ENV",
     "SKIP_ENV_VALIDATION",

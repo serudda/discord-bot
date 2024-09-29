@@ -1,2 +1,2 @@
 export * from './getComponent';
-export * from './registerCommands';
+export * from './loadCommands';

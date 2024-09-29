@@ -1,12 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { Command } from '../common';
+import { Command } from './common';
 import { REST, Routes } from 'discord.js';
 
-// Define the function to register the commands
-export const registerCommands = async (applicationId: string, guildId: string, token: string) => {
+export const deployCommands = async () => {
   const commands: Array<Command> = [];
-  const commandsPath = path.join(__dirname, '../commands');
+  const commandsPath = path.join(__dirname, './commands');
 
   // Read all the files in the commands directory
   const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
@@ -27,16 +26,22 @@ export const registerCommands = async (applicationId: string, guildId: string, t
   }
 
   // Initialize the REST client for Discord
-  const rest = new REST({ version: '10' }).setToken(token);
+  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN!);
 
   try {
     console.log(`Registering ${commands.length} commands...`);
 
     // Update the commands in the server
-    await rest.put(Routes.applicationGuildCommands(applicationId, guildId), { body: commands });
+    await rest.put(
+      Routes.applicationGuildCommands(process.env.DISCORD_APPLICATION_ID!, process.env.DISCORD_SERVER_ID!),
+      { body: commands },
+    );
 
     console.log('Commands registered successfully.');
   } catch (error) {
     console.error('Error registering commands:', error);
   }
 };
+
+// Run the command deployment script
+deployCommands();
