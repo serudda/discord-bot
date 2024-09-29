@@ -1,7 +1,45 @@
 {
-	"eslint.workingDirectories": [
-		{
-			"mode": "auto"
-		}
-	]
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+
+  // Explorer Settings
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": true,
+  "explorer.fileNesting.patterns": {
+    "package.json": "pnpm-lock.yaml, package-lock.json, yarn.lock",
+    "prettier.config.mjs": ".prettierignore",
+    "README.md": "CONTRIBUTING.md",
+    ".eslintrc.cjs": ".eslintignore"
+  },
+  // Editor Settings
+  "editor.linkedEditing": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "*.svg": "html"
+  },
+  // ESLint Settings
+  "eslint.validate": ["javascript", "javascriptreact", "astro", "typescript", "typescriptreact"],
+  "[astro]": {
+    "editor.defaultFormatter": "astro-build.astro-vscode"
+  },
+  // Prettier Settings
+  "prettier.documentSelectors": ["**/*.astro"],
+
+  // Tailwind CSS Settings
+  "tailwindCSS.classAttributes": ["class", "className", "ngClass", "classes", "cn"],
+  "tailwindCSS.includeLanguages": {
+    "html": "html",
+    "javascript": "javascript",
+    "css": "css",
+    "astro": "astro",
+    "vue": "vue",
+    "typescript": "typescript"
+  }
 }

@@ -1,10 +1,12 @@
 /**
- * normalizeString
- * @description - replace special characters from a string
- * @use - normalizeString('Fábula Niño');
+ * normalizeString.
+ *
+ * - replace special characters from a string.
+ *
  * @function
- * @param {string} str - string to parse
- * @return {string} string parsed (e.g. Fabula Nino)
+ * @param {string} str - string to parse.
+ * @returns {string} string parsed (e.g. Fabula Nino)
+ * @use - normalizeString('Fábula Niño');
  */
 export const normalizeString = (str: string) => {
   // VARIABLES
@@ -17,6 +19,7 @@ export const normalizeString = (str: string) => {
   const ret = [];
   for (let i = 0; i < str.length; i++) {
     const c = str.charAt(i);
+    // eslint-disable-next-line no-prototype-builtins
     if (mapping.hasOwnProperty(str.charAt(i))) {
       ret.push(mapping[c]);
     } else {

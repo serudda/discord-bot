@@ -15,7 +15,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": [".eslintrc.js", "prettier.config.mjs"]
+  "include": ["eslint.config.mjs", "prettier.config.mjs"]
 }
