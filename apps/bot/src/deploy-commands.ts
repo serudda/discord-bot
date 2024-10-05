@@ -3,23 +3,42 @@ import path from 'path';
 import { Command } from './common';
 import { REST, Routes } from 'discord.js';
 
+// Function to recursively get all .ts and .js files in a directory
+const getCommandFilesRecursively = (dir: string): Array<string> => {
+  let results: Array<string> = [];
+  const list = fs.readdirSync(dir);
+
+  list.forEach((file) => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat && stat.isDirectory()) {
+      // Recursively search subdirectories
+      results = results.concat(getCommandFilesRecursively(filePath));
+    } else if (file.endsWith('.ts') || file.endsWith('.js')) {
+      results.push(filePath);
+    }
+  });
+
+  return results;
+};
+
 export const deployCommands = async () => {
   const commands: Array<Command> = [];
   const commandsPath = path.join(__dirname, './commands');
 
   // Read all the files in the commands directory
-  const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
+  const commandFiles = getCommandFilesRecursively(commandsPath);
 
   console.log(`Found ${commandFiles.length} commands.`);
 
   // Iterate over each command file and import it
   for (const file of commandFiles) {
-    const commandPath = path.join(commandsPath, file);
-    const command = (await import(commandPath)).default as Command;
+    const command = (await import(file)).default as Command;
 
     // Ensure the command has a valid structure
     if (command.data) {
-      commands.push(command.data.toJSON() as any);
+      commands.push(command.data.toJSON() as unknown as Command);
     } else {
       console.warn(`The command in ${file} is missing a 'data' or 'execute' property.`);
     }
