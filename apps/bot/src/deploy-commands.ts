@@ -1,34 +1,14 @@
-import fs from 'fs';
 import path from 'path';
 import { Command } from './common';
+import { getFilesRecursively } from './utils';
 import { REST, Routes } from 'discord.js';
-
-// Function to recursively get all .ts and .js files in a directory
-const getCommandFilesRecursively = (dir: string): Array<string> => {
-  let results: Array<string> = [];
-  const list = fs.readdirSync(dir);
-
-  list.forEach((file) => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-
-    if (stat && stat.isDirectory()) {
-      // Recursively search subdirectories
-      results = results.concat(getCommandFilesRecursively(filePath));
-    } else if (file.endsWith('.ts') || file.endsWith('.js')) {
-      results.push(filePath);
-    }
-  });
-
-  return results;
-};
 
 export const deployCommands = async () => {
   const commands: Array<Command> = [];
   const commandsPath = path.join(__dirname, './commands');
 
   // Read all the files in the commands directory
-  const commandFiles = getCommandFilesRecursively(commandsPath);
+  const commandFiles = getFilesRecursively(commandsPath);
 
   console.log(`Found ${commandFiles.length} commands.`);
 
