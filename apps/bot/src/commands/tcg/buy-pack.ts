@@ -1,5 +1,5 @@
 import { Card } from '@discord-bot/db';
-import { api } from '../../api/api';
+import { api } from '../../api';
 import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 const command = {
@@ -20,7 +20,7 @@ const command = {
         await interaction.reply('No tienes suficientes coins para comprar un paquete.');
       }
     } catch (error) {
-      console.error(error);
+      console.error('*** ERROR ***', error);
       await interaction.reply('Hubo un error al comprar el paquete. Por favor, intenta nuevamente.');
     }
   },
