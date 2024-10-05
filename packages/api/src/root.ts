@@ -2,6 +2,7 @@ import { accountRouter } from './router/account';
 import { paymentRouter } from './router/payment';
 import { subscriptionRouter } from './router/subscription';
 import { subscriptionPlanRouter } from './router/subscriptionPlan';
+import { tcgRouter } from './router/tcg';
 import { userRouter } from './router/user';
 import { createTRPCRouter } from './trpc';
 
@@ -10,6 +11,7 @@ export const appRouter = createTRPCRouter({
   payment: paymentRouter,
   subscription: subscriptionRouter,
   subscriptionPlan: subscriptionPlanRouter,
+  tcg: tcgRouter,
   user: userRouter,
 });
 
