@@ -3,7 +3,7 @@ import { api } from '../../api';
 import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
 
 const command = {
-  data: new SlashCommandBuilder().setName('buy-pack').setDescription('Compra un sobre de 5 cartas'),
+  data: new SlashCommandBuilder().setName('buy-pack').setDescription('Compra un sobre de 3 cartas'),
   execute: async (interaction: CommandInteraction) => {
     const userId = interaction.user.id;
 
