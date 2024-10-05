@@ -1,5 +1,6 @@
-import { ClientWithComponents, ComponentType } from '../common';
+import { ComponentType } from '../common';
+import { Client } from 'discord.js';
 
-export const getComponent = (client: ClientWithComponents, type: ComponentType, id: string) => {
+export const getComponent = (client: Client, type: ComponentType, id: string) => {
   return client[type]?.get(id);
 };

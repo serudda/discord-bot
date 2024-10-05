@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { ClientWithComponents, Command } from '../common';
-import { Collection } from 'discord.js';
+import { Command } from '../common';
+import { Client, Collection } from 'discord.js';
 
-export const loadCommands = async (client: ClientWithComponents) => {
+export const loadCommands = async (client: Client) => {
   client.commands = new Collection();
 
   const commandsPath = path.join(__dirname, '..', 'commands');
