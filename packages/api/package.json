@@ -1,26 +1,34 @@
 {
   "name": "@discord-bot/api",
   "version": "0.1.0",
-  "main": "./index.ts",
-  "types": "./index.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "license": "MIT",
   "author": "Indie Creators HQ",
   "scripts": {
+    "dev": "pnpm with-env ts-node --project tsconfig.json src/server.ts",
     "clean": "git clean -xdf .next .turbo node_modules dist",
     "lint": "eslint .",
     "lint:fix": "pnpm lint --fix",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "with-env": "dotenv -e ../../.env.${NODE_ENV:-local} --"
   },
   "dependencies": {
     "@discord-bot/db": "workspace:*",
     "@trpc/client": "^10.45.2",
     "@trpc/server": "^10.45.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
     "superjson": "1.9.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@discord-bot/eslint-config": "workspace:*",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "dotenv-cli": "^7.4.2",
     "eslint": "^9.11.1",
+    "ts-node": "^10.9.1",
     "typescript": "^5.6.2"
   }
 }
