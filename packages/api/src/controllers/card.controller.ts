@@ -1,3 +1,4 @@
+import { CardError, CommonError } from '@discord-bot/error-handler';
 import { getRandomRarity, Response, TRPCErrorCode, type Params } from '../common';
 import type { BuyPackInputType, GetAllCardsByRarityInputType, GetRandomCardsInputType } from '../schema/card.schema';
 import { TRPCError } from '@trpc/server';
@@ -29,7 +30,15 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
     if (!user) {
       throw new TRPCError({
         code: TRPCErrorCode.NOT_FOUND,
-        message: 'buyPack: User not found',
+        message: CommonError.UserNotFound,
+      });
+    }
+
+    // Check if user has enough coins
+    if (user.coins < PACK_PRICE) {
+      throw new TRPCError({
+        code: TRPCErrorCode.FORBIDDEN,
+        message: CardError.NoCoins,
       });
     }
 
@@ -65,20 +74,18 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = 'buyPack: invalid input';
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: CommonError.InvalidInput,
       });
     }
 
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = 'buyPack: unauthorized';
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: CommonError.UnAuthorized,
         });
       }
 
@@ -111,7 +118,7 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
     if (!cards) {
       throw new TRPCError({
         code: TRPCErrorCode.NOT_FOUND,
-        message: 'No cards found by rarity',
+        message: CardError.CardsNotFoundByRarety,
       });
     }
 
@@ -124,7 +131,7 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = 'getAllCardsByRarity: invalid input';
+      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
         message,
@@ -134,7 +141,7 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = 'getAllCardsByRarity: unauthorized';
+        const message = CommonError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,
@@ -177,14 +184,6 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
       randomCards.push(cards.result.cards[randomIndex]);
     }
 
-    // Check if cards were selected
-    if (randomCards.length === 0) {
-      throw new TRPCError({
-        code: TRPCErrorCode.NOT_FOUND,
-        message: 'No cards random found',
-      });
-    }
-
     return {
       status: Response.SUCCESS,
       result: {
@@ -194,7 +193,7 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = 'getRandomCards: invalid input';
+      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
         message,
@@ -204,7 +203,7 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = 'getRandomCards: unauthorized';
+        const message = CommonError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,

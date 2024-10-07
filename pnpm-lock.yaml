@@ -80,6 +80,9 @@ importers:
       '@discord-bot/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@discord-bot/error-handler':
+        specifier: workspace:*
+        version: link:../../packages/errorHandler
       '@discordjs/rest':
         specifier: ^2.4.0
         version: 2.4.0
@@ -144,6 +147,9 @@ importers:
       '@discord-bot/db':
         specifier: workspace:*
         version: link:../db
+      '@discord-bot/error-handler':
+        specifier: workspace:*
+        version: link:../errorHandler
       '@trpc/client':
         specifier: ^10.45.2
         version: 10.45.2(@trpc/server@10.45.2)
@@ -197,6 +203,12 @@ importers:
       prisma:
         specifier: ^5.20.0
         version: 5.20.0
+      typescript:
+        specifier: ^5.6.2
+        version: 5.6.2
+
+  packages/errorHandler:
+    devDependencies:
       typescript:
         specifier: ^5.6.2
         version: 5.6.2

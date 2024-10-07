@@ -1,4 +1,5 @@
 import { Card } from '@discord-bot/db';
+import { ErrorMessages } from '@discord-bot/error-handler';
 import { api } from '../../api';
 import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
 
@@ -17,11 +18,11 @@ const command = {
         });
         await interaction.reply(response);
       } else {
-        await interaction.reply('No tienes suficientes coins para comprar un paquete.');
+        await interaction.reply(ErrorMessages.NoCoins);
       }
     } catch (error) {
-      console.error('*** ERROR ***', error);
-      await interaction.reply('Hubo un error al comprar el paquete. Por favor, intenta nuevamente.');
+      console.error('Error buying pack:', error);
+      await interaction.reply(ErrorMessages.Unknown);
     }
   },
 };
