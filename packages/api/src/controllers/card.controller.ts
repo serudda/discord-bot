@@ -226,7 +226,6 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
           data: {
             userId: user.id,
             cardId: card.id,
-            quantity: 1,
           },
         });
       });
