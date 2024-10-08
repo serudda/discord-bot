@@ -5,6 +5,7 @@ import type {
   BuyPackInputType,
   CreateCardInputType,
   GetAllCardsByRarityInputType,
+  GetRandomCardByRarityInputType,
   GetRandomCardsInputType,
   SetCoinsInputType,
 } from '../schema/card.schema';
@@ -431,16 +432,72 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
   try {
     const { amount } = input;
 
+    // Select random cards by amount
+    const randomCards = [];
+    for (let i = 0; i < amount; i++) {
+      const randomCardByRarity = await getRandomCardByRarityHandler({
+        ctx,
+        input: {
+          rarity: getRandomRarity(),
+        },
+      });
+      randomCards.push(randomCardByRarity?.result.card);
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        cards: randomCards,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      const message = CommonError.InvalidInput;
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        const message = CommonError.UnAuthorized;
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get random card by rarity.
+ *
+ * @param ctx Ctx.
+ * @param input GetRandomCardByRarityInputType.
+ * @returns Random card.
+ */
+export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRandomCardByRarityInputType>) => {
+  try {
+    const { rarity } = input;
+
     // Get all cards by rarity
     const cards = await getAllCardsByRarityHandler({
       ctx,
       input: {
-        rarity: getRandomRarity(),
+        rarity,
       },
     });
 
-    // Check if cards were found
-    if (!cards?.result || !cards?.result?.cards || cards.result.cards.length === 0) {
+    if (!cards?.result?.cards || cards.result.cards.length === 0) {
       return {
         result: {
           status: Response.ERROR,
@@ -449,18 +506,14 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
       };
     }
 
-    // Select random cards by amount
-    const randomCards = [];
     const { cards: allCardsByRarity } = cards.result;
-    for (let i = 0; i < amount; i++) {
-      const randomIndex = Math.floor(Math.random() * allCardsByRarity.length);
-      randomCards.push(allCardsByRarity[randomIndex]);
-    }
+    const randomIndex = Math.floor(Math.random() * allCardsByRarity.length);
+    const randomCard = allCardsByRarity[randomIndex];
 
     return {
       result: {
         status: Response.SUCCESS,
-        cards: randomCards,
+        card: randomCard,
       },
     };
   } catch (error: unknown) {

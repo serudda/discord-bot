@@ -24,6 +24,13 @@ export type GetRandomCardsInputType = TypeOf<typeof getRandomCardsInput>;
 
 /*------------------------------------*/
 
+export const getRandomCardByRarityInput = z.object({
+  rarity: z.nativeEnum(Rarity),
+});
+export type GetRandomCardByRarityInputType = TypeOf<typeof getRandomCardByRarityInput>;
+
+/*------------------------------------*/
+
 export const addCoinsInput = z.object({
   discordId: z.string(),
   amount: z.number(),
