@@ -1,5 +1,10 @@
 import { PrismaErrorCode, Response, TRPCErrorCode, type Params } from '../common';
-import type { CreateUserInputType, GetUserByEmailInputType, GetUserInputType } from '../schema/user.schema';
+import type {
+  CreateUserInputType,
+  GetUserByDiscordIdInputType,
+  GetUserByEmailInputType,
+  GetUserByIdInputType,
+} from '../schema/user.schema';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -8,11 +13,34 @@ import { z } from 'zod';
  * Get user by id.
  *
  * @param ctx Ctx.
- * @param input GetUserInputType.
+ * @param input GetUserByIdInputType.
  * @returns User.
  */
-export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserInputType>) =>
+export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInputType>) =>
   ctx.prisma.user.findUnique({ where: { id: input.id }, include: { subscription: true } });
+
+/**
+ * Get user by Discord Id.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserByDiscordIdInputType.
+ * @returns User.
+ */
+export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserByDiscordIdInputType>) => {
+  return ctx.prisma.user.findFirst({
+    where: {
+      accounts: {
+        some: {
+          providerAccountId: input.discordId,
+          provider: 'discord',
+        },
+      },
+    },
+    include: {
+      accounts: true,
+    },
+  });
+};
 
 /**
  * Get user by email.

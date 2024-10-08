@@ -4,7 +4,7 @@ import { z, type TypeOf } from 'zod';
 /*------------------------------------*/
 
 export const buyPackInput = z.object({
-  userId: z.string(),
+  discordId: z.string(),
 });
 export type BuyPackInputType = TypeOf<typeof buyPackInput>;
 

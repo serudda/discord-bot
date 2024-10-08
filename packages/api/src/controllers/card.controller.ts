@@ -1,6 +1,7 @@
 import { CardError, CommonError } from '@discord-bot/error-handler';
 import { getRandomRarity, Response, TRPCErrorCode, type Params } from '../common';
 import type { BuyPackInputType, GetAllCardsByRarityInputType, GetRandomCardsInputType } from '../schema/card.schema';
+import { getUserByDiscordIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -13,33 +14,31 @@ import { z } from 'zod';
  */
 export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) => {
   try {
-    const { userId } = input;
+    const { discordId } = input;
     const PACK_PRICE = 100;
     const PACK_AMOUNT = 3;
 
-    console.log('userId:', userId);
+    // Get user by Discord Id on Account table
+    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
-    // Get user by ID
-    const user = await ctx.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
+    console.log('user:', user);
 
     // Check if user exists
     if (!user) {
-      throw new TRPCError({
-        code: TRPCErrorCode.NOT_FOUND,
+      return {
+        status: Response.ERROR,
         message: CommonError.UserNotFound,
-      });
+      };
     }
+
+    console.log('user.coins:', user.coins);
 
     // Check if user has enough coins
     if (user.coins < PACK_PRICE) {
-      throw new TRPCError({
-        code: TRPCErrorCode.FORBIDDEN,
+      return {
+        status: Response.ERROR,
         message: CardError.NoCoins,
-      });
+      };
     }
 
     // Decrease user's coins
