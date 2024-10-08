@@ -23,3 +23,9 @@ export const getRandomCardsInput = z.object({
 export type GetRandomCardsInputType = TypeOf<typeof getRandomCardsInput>;
 
 /*------------------------------------*/
+
+export const giveCoinsInput = z.object({
+  discordId: z.string(),
+  amount: z.number(),
+});
+export type GiveCoinsInputType = TypeOf<typeof giveCoinsInput>;

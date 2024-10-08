@@ -1,9 +1,85 @@
 import { CardError, CommonError } from '@discord-bot/error-handler';
 import { getRandomRarity, Response, TRPCErrorCode, type Params } from '../common';
-import type { BuyPackInputType, GetAllCardsByRarityInputType, GetRandomCardsInputType } from '../schema/card.schema';
+import type {
+  BuyPackInputType,
+  GetAllCardsByRarityInputType,
+  GetRandomCardsInputType,
+  GiveCoinsInputType,
+} from '../schema/card.schema';
 import { getUserByDiscordIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+/**
+ * Give coins to a user.
+ *
+ * @param ctx Ctx.
+ * @param input GiveCoinsInputType.
+ * @returns User's coins.
+ */
+export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType>) => {
+  try {
+    const { discordId, amount } = input;
+
+    console.log('discordId:', discordId);
+    console.log('amount:', amount);
+
+    // Get user by Discord Id on Account table
+    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!user) {
+      return {
+        status: Response.ERROR,
+        message: CommonError.UserNotFound,
+      };
+    }
+
+    console.log('user.coins:', user.coins);
+
+    // Increase user's coins
+    const userUpdated = await ctx.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        coins: {
+          increment: amount,
+        },
+      },
+    });
+
+    return {
+      status: Response.SUCCESS,
+      result: {
+        coins: userUpdated.coins,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: CommonError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
 
 /**
  * Buy a pack of cards.
