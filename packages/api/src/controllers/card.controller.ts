@@ -207,7 +207,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       }
 
       // Get random cards
-      const randomCards = await getRandomCardsHandler({
+      const randomCardsResponse = await getRandomCardsHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
         input: {
           amount: PACK_AMOUNT,
@@ -215,10 +215,18 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if cards were selected
-      if (!randomCards || !randomCards.result) return;
+      if (!randomCardsResponse || !randomCardsResponse.result || !randomCardsResponse.result.cards) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.RandomCardsNotFound,
+          },
+        };
+      }
 
       // Add cards to user's collection
-      const userCards = await randomCards.result.cards.map(async (card) => {
+      const { cards: randomCards } = randomCardsResponse.result;
+      const userCards = await randomCards.map(async (card) => {
         if (!card) return;
 
         // Add user card
@@ -256,7 +264,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       return {
         result: {
           status: Response.SUCCESS,
-          cards: randomCards.result.cards,
+          cards: randomCards,
         },
       };
     });
@@ -306,16 +314,18 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
       },
     });
 
-    if (!cards) {
-      throw new TRPCError({
-        code: TRPCErrorCode.NOT_FOUND,
-        message: CardError.CardsNotFoundByRarety,
-      });
+    if (!cards || cards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardsNotFoundByRarety,
+        },
+      };
     }
 
     return {
-      status: Response.SUCCESS,
       result: {
+        status: Response.SUCCESS,
         cards,
       },
     };
@@ -366,18 +376,27 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
       },
     });
 
-    if (!cards || !cards.result) return;
+    // Check if cards were found
+    if (!cards?.result || !cards?.result?.cards || cards.result.cards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardsNotFoundByRarety,
+        },
+      };
+    }
 
     // Select random cards by amount
     const randomCards = [];
+    const { cards: allCardsByRarity } = cards.result;
     for (let i = 0; i < amount; i++) {
-      const randomIndex = Math.floor(Math.random() * cards.result.cards.length);
-      randomCards.push(cards.result.cards[randomIndex]);
+      const randomIndex = Math.floor(Math.random() * allCardsByRarity.length);
+      randomCards.push(allCardsByRarity[randomIndex]);
     }
 
     return {
-      status: Response.SUCCESS,
       result: {
+        status: Response.SUCCESS,
         cards: randomCards,
       },
     };
