@@ -10,15 +10,15 @@ enum Option {
 
 const command = {
   data: new SlashCommandBuilder()
-    .setName('give-coins')
-    .setDescription('Da monedas a otro jugador')
+    .setName('set-coins')
+    .setDescription('Asigna las monedas que desees a otro jugador')
     .addUserOption((option) =>
-      option.setName(Option.user).setDescription('Usuario al que deseas dar monedas').setRequired(true),
+      option.setName(Option.user).setDescription('Usuario al que deseas asignar monedas').setRequired(true),
     )
     .addIntegerOption((option) =>
       option
         .setName(Option.amount)
-        .setDescription('Cantidad de monedas que deseas dar')
+        .setDescription('Cantidad de monedas que deseas asignar')
         .setRequired(true)
         .setMinValue(1),
     ),
@@ -35,12 +35,12 @@ const command = {
         return;
       }
 
-      const user = await api.card.giveCoins.mutate({ discordId, amount: parseInt(coins) });
+      const user = await api.card.setCoins.mutate({ discordId, amount: parseInt(coins) });
 
       if (user?.status === Response.ERROR) await interaction.editReply(ErrorMessages[user.message as ErrorCode]);
 
       if (user?.result && user.result.coins) {
-        const response = `🎉 ¡Has dado ${coins} monedas a <@${discordId}>! 🎉\n`;
+        const response = `🎉 ¡Has asignado ${coins} monedas a <@${discordId}>! 🎉\n`;
         await interaction.editReply(response);
       } else {
         await interaction.editReply(ErrorMessages.NoCoins);
