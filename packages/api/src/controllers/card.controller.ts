@@ -3,6 +3,7 @@ import { Ctx, getRandomRarity, Response, TRPCErrorCode, type Params } from '../c
 import type {
   AddCoinsInputType,
   BuyPackInputType,
+  CreateCardInputType,
   GetAllCardsByRarityInputType,
   GetRandomCardsInputType,
   SetCoinsInputType,
@@ -10,6 +11,68 @@ import type {
 import { getUserByDiscordIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+/**
+ * Create a card.
+ *
+ * @param ctx Ctx.
+ * @param input CreateCardInputType.
+ */
+export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputType>) => {
+  try {
+    const { name, description, rarity, imageUrl } = input;
+
+    // Create card
+    const card = await ctx.prisma.card.create({
+      data: {
+        name,
+        description,
+        rarity,
+        image: imageUrl,
+      },
+    });
+
+    // Check if card was created
+    if (!card) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.NoCreateCard,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        card,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: CommonError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
 
 /**
  * Add coins to a user.
@@ -243,7 +306,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         return {
           result: {
             status: Response.ERROR,
-            message: CardError.NoAddCards,
+            message: CardError.NoAddCardToUserCollection,
           },
         };
       }

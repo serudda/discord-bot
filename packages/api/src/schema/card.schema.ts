@@ -37,3 +37,13 @@ export const setCoinsInput = z.object({
   amount: z.number(),
 });
 export type SetCoinsInputType = TypeOf<typeof setCoinsInput>;
+
+/*------------------------------------*/
+
+export const createCardInput = z.object({
+  name: z.string(),
+  description: z.string(),
+  rarity: z.nativeEnum(Rarity),
+  imageUrl: z.string(),
+});
+export type CreateCardInputType = TypeOf<typeof createCardInput>;
