@@ -35,11 +35,12 @@ const command = {
         return;
       }
 
-      const user = await api.card.setCoins.mutate({ discordId, amount: parseInt(coins) });
+      const response = await api.card.setCoins.mutate({ discordId, amount: parseInt(coins) });
 
-      if (user?.status === Response.ERROR) await interaction.editReply(ErrorMessages[user.message as ErrorCode]);
+      if (response?.result?.status === Response.ERROR)
+        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
 
-      if (user?.result && user.result.coins) {
+      if (response?.result && response.result.coins) {
         const response = `🎉 ¡Has asignado ${coins} monedas a <@${discordId}>! 🎉\n`;
         await interaction.editReply(response);
       } else {

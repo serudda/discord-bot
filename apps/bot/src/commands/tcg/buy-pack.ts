@@ -11,18 +11,22 @@ const command = {
 
     try {
       await interaction.deferReply();
-      const pack = await api.card.buyPack.mutate({ discordId });
+      const response = await api.card.buyPack.mutate({ discordId });
 
-      if (pack?.status === Response.ERROR) await interaction.editReply(ErrorMessages[pack.message as ErrorCode]);
+      if (response?.result?.status === Response.ERROR)
+        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
 
-      if (pack?.result && pack.result.cards.length > 0) {
-        let response = '🎉 ¡Has comprado un paquete y obtenido las siguientes cartas! 🎉\n';
-        pack.result.cards.forEach((card?: Card) => {
-          response += `- **${card?.name}** (Rareza: ${card?.rarity})\n`;
-        });
-        await interaction.editReply(response);
-      } else {
-        await interaction.editReply(ErrorMessages.NoCoins);
+      if (response?.result.status === Response.SUCCESS) {
+        const { cards } = response.result;
+        if (cards && cards.length > 0) {
+          let response = '🎉 ¡Has comprado un paquete y obtenido las siguientes cartas! 🎉\n';
+          cards.forEach((card?: Card) => {
+            response += `- **${card?.name}** (Rareza: ${card?.rarity})\n`;
+          });
+          await interaction.editReply(response);
+        } else {
+          await interaction.editReply(ErrorMessages.NoCoins);
+        }
       }
     } catch (error) {
       if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);

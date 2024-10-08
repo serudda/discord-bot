@@ -1,5 +1,5 @@
 import { CardError, CommonError } from '@discord-bot/error-handler';
-import { getRandomRarity, Response, TRPCErrorCode, type Params } from '../common';
+import { Ctx, getRandomRarity, Response, TRPCErrorCode, type Params } from '../common';
 import type {
   AddCoinsInputType,
   BuyPackInputType,
@@ -28,8 +28,10 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
     // Check if user exists
     if (!user) {
       return {
-        status: Response.ERROR,
-        message: CommonError.UserNotFound,
+        result: {
+          status: Response.ERROR,
+          message: CommonError.UserNotFound,
+        },
       };
     }
 
@@ -47,15 +49,17 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
 
     // Check if user's coins were updated
     if (!userUpdated) {
-      throw new TRPCError({
-        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
-        message: CardError.NoAddCoins,
-      });
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.NoAddCoins,
+        },
+      };
     }
 
     return {
-      status: Response.SUCCESS,
       result: {
+        status: Response.SUCCESS,
         coins: userUpdated.coins,
       },
     };
@@ -102,8 +106,10 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
     // Check if user exists
     if (!user) {
       return {
-        status: Response.ERROR,
-        message: CommonError.UserNotFound,
+        result: {
+          status: Response.ERROR,
+          message: CommonError.UserNotFound,
+        },
       };
     }
 
@@ -119,15 +125,17 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
 
     // Check if user's coins were updated
     if (!userUpdated) {
-      throw new TRPCError({
-        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
-        message: CardError.NoSetCoins,
-      });
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.NoSetCoins,
+        },
+      };
     }
 
     return {
-      status: Response.SUCCESS,
       result: {
+        status: Response.SUCCESS,
         coins: userUpdated.coins,
       },
     };
@@ -170,58 +178,91 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
     const PACK_PRICE = 100;
     const PACK_AMOUNT = 3;
 
-    // Get user by Discord Id on Account table
-    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    // Start transaction
+    const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
+      // Get user by Discord Id on Account table
+      const user = await getUserByDiscordIdHandler({
+        ctx: { prisma: prismaTransaction } as Ctx,
+        input: { discordId },
+      });
 
-    console.log('user:', user);
+      // Check if user exists
+      if (!user) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CommonError.UserNotFound,
+          },
+        };
+      }
 
-    // Check if user exists
-    if (!user) {
-      return {
-        status: Response.ERROR,
-        message: CommonError.UserNotFound,
-      };
-    }
+      // Check if user has enough coins
+      if (user.coins < PACK_PRICE) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.NoCoins,
+          },
+        };
+      }
 
-    console.log('user.coins:', user.coins);
-
-    // Check if user has enough coins
-    if (user.coins < PACK_PRICE) {
-      return {
-        status: Response.ERROR,
-        message: CardError.NoCoins,
-      };
-    }
-
-    // Decrease user's coins
-    await ctx.prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        coins: {
-          decrement: PACK_PRICE,
+      // Get random cards
+      const randomCards = await getRandomCardsHandler({
+        ctx: { prisma: prismaTransaction } as Ctx,
+        input: {
+          amount: PACK_AMOUNT,
         },
-      },
+      });
+
+      // Check if cards were selected
+      if (!randomCards || !randomCards.result) return;
+
+      // Add cards to user's collection
+      const userCards = await randomCards.result.cards.map(async (card) => {
+        if (!card) return;
+
+        // Add user card
+        await prismaTransaction.userCard.create({
+          data: {
+            userId: user.id,
+            cardId: card.id,
+            quantity: 1,
+          },
+        });
+      });
+
+      // Check if cards were added to user's collection
+      if (!userCards) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.NoAddCards,
+          },
+        };
+      }
+
+      // Decrease user's coins
+      await prismaTransaction.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          coins: {
+            decrement: PACK_PRICE,
+          },
+        },
+      });
+
+      // Return random cards
+      return {
+        result: {
+          status: Response.SUCCESS,
+          cards: randomCards.result.cards,
+        },
+      };
     });
 
-    // Get random cards
-    const randomCards = await getRandomCardsHandler({
-      ctx,
-      input: {
-        amount: PACK_AMOUNT,
-      },
-    });
-
-    // Check if cards were selected
-    if (!randomCards || !randomCards.result) return;
-
-    return {
-      status: Response.SUCCESS,
-      result: {
-        cards: randomCards.result.cards,
-      },
-    };
+    return result;
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
