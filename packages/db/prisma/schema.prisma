@@ -102,15 +102,14 @@ model User {
 }
 
 model Card {
-    id            String     @id @default(cuid())
-    name          String
-    description   String?
-    image         String
-    rarity        Rarity
-    totalQuantity Int
-    userCards     UserCard[]
-    createdAt     DateTime   @default(now()) @map("created_at")
-    updatedAt     DateTime   @updatedAt @map("updated_at")
+    id          String     @id @default(cuid())
+    name        String
+    description String?
+    image       String
+    rarity      Rarity
+    userCards   UserCard[]
+    createdAt   DateTime   @default(now()) @map("created_at")
+    updatedAt   DateTime   @updatedAt @map("updated_at")
 
     @@map("cards")
 }
@@ -121,7 +120,6 @@ model UserCard {
     userId    String   @map("user_id")
     card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
     cardId    String   @map("card_id")
-    quantity  Int
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
 
