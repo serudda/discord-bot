@@ -9,8 +9,8 @@ const command = {
     try {
       await interaction.deferReply();
 
-      const image1 = 'https://i.imgur.com/A6NqqG7.png';
-      const image2 = 'https://i.imgur.com/A6NqqG7.png';
+      const image1 = 'https://i.imgur.com/mCoLdTd.png';
+      const image2 = 'https://i.imgur.com/nglHze3.png';
       const image3 = 'https://i.imgur.com/A6NqqG7.png';
       const backgroundImage = 'https://i.imgur.com/4JJ2x0C.png';
 
