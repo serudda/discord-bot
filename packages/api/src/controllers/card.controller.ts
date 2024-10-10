@@ -289,8 +289,19 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         };
       }
 
-      // Add cards to user's collection
       const { cards: randomCards } = randomCardsResponse.result;
+
+      // Check if cards were selected
+      if (!randomCards || randomCards.length === 0) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.RandomCardsNotFound,
+          },
+        };
+      }
+
+      // Add cards to user's collection
       const userCards = await randomCards.map(async (card) => {
         if (!card) return;
 
