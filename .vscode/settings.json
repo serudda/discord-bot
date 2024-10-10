@@ -41,5 +41,9 @@
     "astro": "astro",
     "vue": "vue",
     "typescript": "typescript"
+  },
+  // Prisma Settings
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
   }
 }

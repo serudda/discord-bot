@@ -2,10 +2,17 @@ import { z, type TypeOf } from 'zod';
 
 /*------------------------------------*/
 
-export const getUserInput = z.object({
+export const getUserByIdInput = z.object({
   id: z.string(),
 });
-export type GetUserInputType = TypeOf<typeof getUserInput>;
+export type GetUserByIdInputType = TypeOf<typeof getUserByIdInput>;
+
+/*------------------------------------*/
+
+export const getUserByDiscordIdInput = z.object({
+  discordId: z.string(),
+});
+export type GetUserByDiscordIdInputType = TypeOf<typeof getUserByDiscordIdInput>;
 
 /*------------------------------------*/
 

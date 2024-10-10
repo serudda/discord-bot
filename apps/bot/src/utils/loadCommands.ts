@@ -1,21 +1,24 @@
-import fs from 'fs';
 import path from 'path';
-import { ClientWithComponents, Command } from '../common';
-import { Collection } from 'discord.js';
+import { Command } from '../common';
+import { getFilesRecursively } from './getFilesRecursively';
+import { Client, Collection } from 'discord.js';
 
-export const loadCommands = async (client: ClientWithComponents) => {
+export const loadCommands = async (client: Client) => {
   client.commands = new Collection();
 
   const commandsPath = path.join(__dirname, '..', 'commands');
-  const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts'));
+  const commandFiles = getFilesRecursively(commandsPath);
 
   for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = (await import(filePath)).default as Command;
+    const command = (await import(file)).default as Command;
+
+    // Validate the command structure
     if ('data' in command && 'execute' in command) {
       client.commands.set(command.data.name, command);
     } else {
       console.log(`[WARNING] Command in ${file} is missing 'data' or 'execute' property.`);
     }
   }
+
+  console.log(`Loaded ${client.commands.size} commands successfully.`);
 };

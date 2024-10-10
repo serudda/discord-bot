@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
 }
 
 enum SubscriptionFrequency {
@@ -20,6 +21,14 @@ enum SubscriptionFrequency {
 enum SubscriptionPlanSlug {
     free
     plus
+}
+
+enum Rarity {
+    COMMON
+    UNCOMMON
+    RARE
+    EPIC
+    LEGENDARY
 }
 
 // NextAuth.js Models
@@ -83,11 +92,38 @@ model User {
     accounts      Account[]
     sessions      Session[]
     subscription  Subscription?
+    coins         Int           @default(0)
+    userCards     UserCard[]
     isActive      Boolean       @default(true) @map("is_active")
     createdAt     DateTime      @default(now()) @map("created_at")
     updatedAt     DateTime      @updatedAt @map("updated_at")
 
     @@map("users")
+}
+
+model Card {
+    id          String     @id @default(cuid())
+    name        String
+    description String?
+    image       String
+    rarity      Rarity
+    userCards   UserCard[]
+    createdAt   DateTime   @default(now()) @map("created_at")
+    updatedAt   DateTime   @updatedAt @map("updated_at")
+
+    @@map("cards")
+}
+
+model UserCard {
+    id        String   @id @default(cuid())
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String   @map("user_id")
+    card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+    cardId    String   @map("card_id")
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@map("user_cards")
 }
 
 model SubscriptionPlan {

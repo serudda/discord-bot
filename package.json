@@ -10,6 +10,8 @@
     "clean": "git clean -xdf .turbo node_modules dist",
     "clean:workspaces": "turbo clean",
     "db:generate": "turbo db:generate",
+    "db:push": "turbo db:push db:generate",
+    "db:migrate": "turbo db:migrate",
     "deploy-commands": "turbo deploy-commands",
     "dev": "turbo dev",
     "lint": "turbo lint && manypkg check",

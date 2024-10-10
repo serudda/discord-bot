@@ -1,6 +1,6 @@
-import fs from 'fs';
 import path from 'path';
 import { Command } from './common';
+import { getFilesRecursively } from './utils';
 import { REST, Routes } from 'discord.js';
 
 export const deployCommands = async () => {
@@ -8,18 +8,17 @@ export const deployCommands = async () => {
   const commandsPath = path.join(__dirname, './commands');
 
   // Read all the files in the commands directory
-  const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts') || file.endsWith('.js'));
+  const commandFiles = getFilesRecursively(commandsPath);
 
   console.log(`Found ${commandFiles.length} commands.`);
 
   // Iterate over each command file and import it
   for (const file of commandFiles) {
-    const commandPath = path.join(commandsPath, file);
-    const command = (await import(commandPath)).default as Command;
+    const command = (await import(file)).default as Command;
 
     // Ensure the command has a valid structure
     if (command.data) {
-      commands.push(command.data.toJSON() as any);
+      commands.push(command.data.toJSON() as unknown as Command);
     } else {
       console.warn(`The command in ${file} is missing a 'data' or 'execute' property.`);
     }
