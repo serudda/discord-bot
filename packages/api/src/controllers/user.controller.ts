@@ -208,7 +208,8 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
     return {
       result: {
         status: Response.SUCCESS,
-        user: newAccount.result.account?.providerAccountId,
+        name: newUser?.result?.user?.name,
+        coins: newUser?.result?.user?.coins,
       },
     };
   } catch (error: unknown) {
