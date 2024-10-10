@@ -4,6 +4,7 @@ import type {
   GetUserByDiscordIdInputType,
   GetUserByEmailInputType,
   GetUserByIdInputType,
+  GetUserCoinsInputType,
 } from '../schema/user.schema';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
@@ -120,4 +121,27 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
       });
     }
   }
+};
+
+/**
+ * Get user coins.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserCoinsInputType.
+ * @returns Coins.
+ */
+export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInputType>) => {
+  return ctx.prisma.user.findFirst({
+    where: {
+      accounts: {
+        some: {
+          providerAccountId: input.discordId,
+          provider: 'discord',
+        },
+      },
+    },
+    select: {
+      coins: true,
+    },
+  });
 };

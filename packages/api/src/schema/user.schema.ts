@@ -31,3 +31,8 @@ export const createUserInput = z.object({
 export type CreateUserInputType = TypeOf<typeof createUserInput>;
 
 /*------------------------------------*/
+
+export const getUserCoinsInput = z.object({
+  discordId: z.string(),
+});
+export type GetUserCoinsInputType = TypeOf<typeof getUserCoinsInput>;
