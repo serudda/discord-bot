@@ -26,8 +26,6 @@ const command = {
           images.push(card?.image as string);
         });
 
-        console.log('images', images);
-
         // Convert the image to buffer
         const buffer = await mergeImages(images, backgroundImage);
 
