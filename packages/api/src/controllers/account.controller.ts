@@ -1,21 +1,17 @@
+import { AccountError } from '@discord-bot/error-handler';
+import { Response, TRPCErrorCode, type Params } from '../common';
+import type { CreateAccountInputType, GetAllProvidersByUserIdInputType } from '../schema/account.schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { Response, TRPCErrorCode, type Params } from '../common';
-import type {
-  CreateAccountInputType,
-  GetAllProvidersByUserIdInputType,
-} from '../schema/account.schema';
 
 /**
- * Get all providers by user id
- * @param ctx Ctx
- * @param input GetAllProvidersByUserIdInputType
+ * Get all providers by user id.
+ *
+ * @param ctx Ctx.
+ * @param input GetAllProvidersByUserIdInputType.
  * @returns Account[]
  */
-export const getAllProvidersByUserIdHandler = async ({
-  ctx,
-  input,
-}: Params<GetAllProvidersByUserIdInputType>) => {
+export const getAllProvidersByUserIdHandler = async ({ ctx, input }: Params<GetAllProvidersByUserIdInputType>) => {
   return ctx.prisma.account.findMany({
     where: {
       userId: input.userId,
@@ -24,10 +20,11 @@ export const getAllProvidersByUserIdHandler = async ({
 };
 
 /**
- * Create account
- * @param ctx Ctx
- * @param input CreateAccountInputType
- * @returns Account
+ * Create account.
+ *
+ * @param ctx Ctx.
+ * @param input CreateAccountInputType.
+ * @returns Account.
  */
 export const createAccountHandler = async ({ ctx, input }: Params<CreateAccountInputType>) => {
   try {
@@ -42,9 +39,19 @@ export const createAccountHandler = async ({ ctx, input }: Params<CreateAccountI
       },
     });
 
+    // Check if account was created
+    if (!account) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: AccountError.AccountNotCreated,
+        },
+      };
+    }
+
     return {
-      status: Response.SUCCESS,
       result: {
+        status: Response.SUCCESS,
         account,
       },
     };
