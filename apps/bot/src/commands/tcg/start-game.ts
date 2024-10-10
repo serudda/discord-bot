@@ -24,8 +24,6 @@ const command = {
         image: avatarURL,
       });
 
-      console.log('*** RESPONSE ***', response);
-
       if (response?.result.status === Response.ERROR) {
         if (response.result.message === UserError.UserAlreadyExists) {
           await interaction.editReply(
@@ -37,9 +35,6 @@ const command = {
           return;
         }
       }
-
-      console.log('response', response);
-      console.log('response.result', response?.result);
 
       if (response?.result && response.result.coins) {
         const msg = `¡Bienvenido ${response.result.name},\n ya puedes empezar a coleccionar cartas! Has recibido ${response.result.coins} monedas de regalo.\n Puedes usar el comando \`/buy-pack\` para comprar sobres de cartas.`;
