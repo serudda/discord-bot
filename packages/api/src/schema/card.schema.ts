@@ -54,3 +54,10 @@ export const createCardInput = z.object({
   imageUrl: z.string(),
 });
 export type CreateCardInputType = TypeOf<typeof createCardInput>;
+
+/*------------------------------------*/
+
+export const getCollectionInput = z.object({
+  discordId: z.string(),
+});
+export type GetCollectionInputType = TypeOf<typeof getCollectionInput>;

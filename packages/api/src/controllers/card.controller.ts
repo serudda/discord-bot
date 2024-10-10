@@ -5,6 +5,7 @@ import type {
   BuyPackInputType,
   CreateCardInputType,
   GetAllCardsByRarityInputType,
+  GetCollectionInputType,
   GetRandomCardByRarityInputType,
   GetRandomCardsInputType,
   SetCoinsInputType,
@@ -533,6 +534,81 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get user collection.
+ *
+ * @param ctx Ctx.
+ * @param input GetCollectionInputType.
+ * @returns User's collection.
+ */
+export const getCollectionHandler = async ({ ctx, input }: Params<GetCollectionInputType>) => {
+  try {
+    const { discordId } = input;
+
+    // Get user by Discord Id on Account table
+    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!user) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CommonError.UserNotFound,
+        },
+      };
+    }
+
+    // Get user's collection
+    const userCollection = await ctx.prisma.userCard.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        card: true,
+      },
+    });
+
+    if (!userCollection || userCollection.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.NoUserCards,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        collection: userCollection,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: CommonError.UnAuthorized,
         });
       }
 

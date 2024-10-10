@@ -6,6 +6,7 @@ export enum CardError {
   NoSetCoins = 'NoSetCoins',
   NoAddCardToUserCollection = 'NoAddCardToUserCollection',
   NoCreateCard = 'NoCreateCard',
+  NoUserCards = 'NoUserCards',
 }
 
 export const CardErrors: Record<CardError, string> = {
@@ -16,4 +17,5 @@ export const CardErrors: Record<CardError, string> = {
   [CardError.NoSetCoins]: 'No se pudieron asignar las monedas al usuario',
   [CardError.NoAddCardToUserCollection]: 'No se pudieron añadir las cartas a la colección del usuario',
   [CardError.NoCreateCard]: 'No se pudo crear la carta',
+  [CardError.NoUserCards]: 'El usuario aún no tiene cartas',
 };
