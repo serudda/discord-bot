@@ -25,10 +25,23 @@ export type GetUserByEmailInputType = TypeOf<typeof getUserByEmailInput>;
 
 export const createUserInput = z.object({
   name: z.string(),
+  username: z.string(),
   email: z.string().optional(),
   image: z.string().default(''),
+  coins: z.number().default(0),
 });
 export type CreateUserInputType = TypeOf<typeof createUserInput>;
+
+/*------------------------------------*/
+
+export const registerUserInput = z.object({
+  name: z.string(),
+  username: z.string(),
+  email: z.string().optional(),
+  image: z.string().default(''),
+  discordId: z.string(),
+});
+export type RegisterUserInputType = TypeOf<typeof registerUserInput>;
 
 /*------------------------------------*/
 
@@ -36,3 +49,5 @@ export const getUserCoinsInput = z.object({
   discordId: z.string(),
 });
 export type GetUserCoinsInputType = TypeOf<typeof getUserCoinsInput>;
+
+/*------------------------------------*/

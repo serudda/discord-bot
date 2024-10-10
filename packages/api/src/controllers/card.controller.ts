@@ -1,4 +1,4 @@
-import { CardError, CommonError } from '@discord-bot/error-handler';
+import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
 import { Ctx, getRandomRarity, Response, TRPCErrorCode, type Params } from '../common';
 import type {
   AddCoinsInputType,
@@ -64,7 +64,7 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: CommonError.UnAuthorized,
+          message: UserError.UnAuthorized,
         });
       }
 
@@ -95,7 +95,7 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
       return {
         result: {
           status: Response.ERROR,
-          message: CommonError.UserNotFound,
+          message: UserError.UserNotFound,
         },
       };
     }
@@ -142,7 +142,7 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: CommonError.UnAuthorized,
+          message: UserError.UnAuthorized,
         });
       }
 
@@ -173,7 +173,7 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
       return {
         result: {
           status: Response.ERROR,
-          message: CommonError.UserNotFound,
+          message: UserError.UserNotFound,
         },
       };
     }
@@ -218,7 +218,7 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: CommonError.UnAuthorized,
+          message: UserError.UnAuthorized,
         });
       }
 
@@ -256,7 +256,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         return {
           result: {
             status: Response.ERROR,
-            message: CommonError.UserNotFound,
+            message: UserError.UserNotFound,
           },
         };
       }
@@ -360,7 +360,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: CommonError.UnAuthorized,
+          message: UserError.UnAuthorized,
         });
       }
 
@@ -418,7 +418,7 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = CommonError.UnAuthorized;
+        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,
@@ -475,7 +475,7 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = CommonError.UnAuthorized;
+        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,
@@ -541,7 +541,7 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = CommonError.UnAuthorized;
+        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,
@@ -575,7 +575,7 @@ export const getCollectionHandler = async ({ ctx, input }: Params<GetCollectionI
       return {
         result: {
           status: Response.ERROR,
-          message: CommonError.UserNotFound,
+          message: UserError.UserNotFound,
         },
       };
     }
@@ -619,7 +619,7 @@ export const getCollectionHandler = async ({ ctx, input }: Params<GetCollectionI
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: CommonError.UnAuthorized,
+          message: UserError.UnAuthorized,
         });
       }
 

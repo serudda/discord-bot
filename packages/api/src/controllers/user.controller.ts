@@ -1,3 +1,4 @@
+import { AccountError, CommonError, UserError } from '@discord-bot/error-handler';
 import { PrismaErrorCode, Response, TRPCErrorCode, type Params } from '../common';
 import type {
   CreateUserInputType,
@@ -5,7 +6,9 @@ import type {
   GetUserByEmailInputType,
   GetUserByIdInputType,
   GetUserCoinsInputType,
+  RegisterUserInputType,
 } from '../schema/user.schema';
+import { createAccountHandler } from './account.controller';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -70,17 +73,29 @@ export const getUserByEmailHandler = async ({ ctx, input }: Params<GetUserByEmai
  */
 export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputType>) => {
   try {
+    const { name, email, image } = input;
+
     const user = await ctx.prisma.user.create({
       data: {
-        name: input.name,
-        image: input.image,
-        email: input.email,
+        name,
+        image,
+        email,
       },
     });
 
+    // Check if user was created
+    if (!user) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotCreated,
+        },
+      };
+    }
+
     return {
-      status: Response.SUCCESS,
       result: {
+        status: Response.SUCCESS,
         user,
       },
     };
@@ -112,6 +127,105 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Register user.
+ *
+ * @param ctx Ctx.
+ * @param input RegisterUserInputType.
+ * @returns User.
+ */
+export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInputType>) => {
+  try {
+    const { discordId, email, name, username, image } = input;
+    const DEFAULT_COINS = 500;
+
+    // Check if user already exists
+    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    if (user) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserAlreadyExists,
+        },
+      };
+    }
+
+    // Create user
+    const newUser = await createUserHandler({
+      ctx,
+      input: {
+        name,
+        username,
+        email,
+        image,
+        coins: DEFAULT_COINS,
+      },
+    });
+
+    // Check if user was created
+    if (!newUser || newUser.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotCreated,
+        },
+      };
+    }
+
+    // Create account
+    const newAccount = await createAccountHandler({
+      ctx,
+      input: {
+        type: 'discord',
+        provider: 'discord',
+        providerAccountId: discordId,
+        userId: newUser?.result?.user?.id as string,
+      },
+    });
+
+    // Check if account was created
+    if (!newAccount || newAccount.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: AccountError.AccountNotCreated,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user: newAccount.result.account?.providerAccountId,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
         });
       }
 
