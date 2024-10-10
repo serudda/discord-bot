@@ -73,13 +73,15 @@ export const getUserByEmailHandler = async ({ ctx, input }: Params<GetUserByEmai
  */
 export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputType>) => {
   try {
-    const { name, email, image } = input;
+    const { name, username, email, image, coins } = input;
 
     const user = await ctx.prisma.user.create({
       data: {
         name,
+        username,
         image,
         email,
+        coins,
       },
     });
 

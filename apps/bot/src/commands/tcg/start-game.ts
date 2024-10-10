@@ -1,4 +1,4 @@
-import { ErrorCode, ErrorMessages } from '@discord-bot/error-handler';
+import { ErrorCode, ErrorMessages, UserError } from '@discord-bot/error-handler';
 import { api, Response } from '../../api';
 import { TRPCClientError } from '@trpc/client';
 import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
@@ -7,25 +7,45 @@ const command = {
   data: new SlashCommandBuilder().setName('start-game').setDescription('Empieza a coleccionar cartas'),
   execute: async (interaction: CommandInteraction) => {
     try {
-      const { id: discordId, displayName, username } = interaction.user;
+      const { user } = interaction;
+      const avatarURL = user.displayAvatarURL({ size: 512, forceStatic: true });
       await interaction.deferReply();
 
       // Check if user exists
-      if (!discordId) {
+      if (!user.id) {
         await interaction.editReply(ErrorMessages.DiscordUserNotFound);
         return;
       }
 
-      const response = await api.user.register.mutate({ discordId, name: displayName, username });
+      const response = await api.user.register.mutate({
+        discordId: user.id,
+        name: user.displayName,
+        username: user.username,
+        image: avatarURL,
+      });
 
-      if (response?.result.status === Response.ERROR)
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+      console.log('*** RESPONSE ***', response);
+
+      if (response?.result.status === Response.ERROR) {
+        if (response.result.message === UserError.UserAlreadyExists) {
+          await interaction.editReply(
+            'Ya estas coleccionando cartas.\nPuedes usar el comando `/buy-pack` para comprar sobres de cartas.',
+          );
+          return;
+        } else {
+          await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+          return;
+        }
+      }
+
+      console.log('response', response);
+      console.log('response.result', response?.result);
 
       if (response?.result && response.result.coins) {
         const msg = `¡Bienvenido ${response.result.name},\n ya puedes empezar a coleccionar cartas! Has recibido ${response.result.coins} monedas de regalo.\n Puedes usar el comando \`/buy-pack\` para comprar sobres de cartas.`;
         await interaction.editReply(msg);
       } else {
-        await interaction.editReply(ErrorMessages.NoCoins);
+        await interaction.editReply(ErrorMessages.Unknown);
       }
     } catch (error) {
       if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
