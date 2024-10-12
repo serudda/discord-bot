@@ -8,7 +8,7 @@
   "main": "src/index.ts",
   "scripts": {
     "clean": "git clean -xdf node_modules",
-    "dev": "pnpm with-env ts-node-transpile-only src/index.ts",
+    "dev": "pnpm with-env node --import tsx src/index.ts",
     "lint": "eslint .",
     "lint:fix": "pnpm lint --fix",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -25,10 +25,12 @@
     "discord-api-types": "^0.37.101",
     "discord.js": "^14.7.1",
     "jimp": "^1.6.0",
-    "superjson": "1.9.1"
+    "superjson": "1.9.1",
+    "tsx": "^4.19.1"
   },
   "devDependencies": {
     "@discord-bot/eslint-config": "workspace:*",
+    "@discord-bot/typescript-config": "workspace:*",
     "@types/node": "^22.7.4",
     "dotenv-cli": "^7.4.2",
     "eslint": "^9.11.1",

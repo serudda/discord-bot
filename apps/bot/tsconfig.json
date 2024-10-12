@@ -1,7 +1,6 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@discord-bot/typescript-config/bot.json",
   "compilerOptions": {
-    "target": "ESNext",
     "module": "commonjs",
     "paths": {
       "~/*": ["./src/*"]
