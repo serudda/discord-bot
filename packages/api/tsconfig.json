@@ -1,10 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@discord-bot/typescript-config/internal-package.json",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "noEmit": false
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["src", "src/index.ts", "transformer.ts"]
+  "include": ["src", "src/index.ts", "transformer.ts"],
+  "exclude": ["node_modules"]
 }

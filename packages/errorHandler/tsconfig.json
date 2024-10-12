@@ -1,4 +1,9 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@discord-bot/typescript-config/internal-package.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowSyntheticDefaultImports": true
+  },
   "include": ["src/index.ts"]
 }

@@ -35,6 +35,7 @@ const server = createHTTPServer({
  * Start the server.
  */
 const port = 5173;
+
 server.listen(port);
 
 console.log(`🚀 Server ready at http://localhost:${port}`);
