@@ -5,11 +5,12 @@
   "types": "./src/index.ts",
   "license": "MIT",
   "author": "Indie Creators HQ",
+  "type": "module",
   "scripts": {
     "clean": "rm -rf .turbo node_modules"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@discord-bot/typescript-config": "workspace:*",
     "typescript": "^5.6.2"
   }
 }
