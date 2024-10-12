@@ -1,81 +1,115 @@
-# Turborepo starter
 
-This is an official starter Turborepo.
+# Discord Bot Project
 
-## Using this example
+This project sets up a Discord bot using **Node.js**, **Prisma**, and **pnpm**. Follow the instructions below to install, configure, and run the bot in your development environment.
 
-Run the following command:
+---
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Database Setup](#database-setup)
+- [Running the Project](#running-the-project)
+- [Discord Developer Portal Setup](#discord-developer-portal-setup)
+- [License](#license)
+
+---
+
+## Requirements
+
+Make sure the following tools are installed on your machine:
+
+- **Node.js**: Install the latest stable version of Node.js. You can download it from [here](https://nodejs.org/).
+- **pnpm**: If you haven't installed pnpm, follow the installation steps below.
+- **Discord Developer Account**: You will need access to the [Discord Developer Portal](https://discord.com/developers/docs/intro) to create a bot and obtain your bot token.
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+
+Clone this repository to your local machine using the following command:
 
 ```sh
-npx create-turbo@latest
+git clone https://github.com/serudda/discord-bot.git
+cd discord-bot
 ```
 
-## What's inside?
+### 2. Install pnpm (if you don't have it installed globally)
 
-This Turborepo includes the following packages/apps:
+You can install pnpm globally using npm with the following command:
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
+```sh
+npm install -g pnpm
 ```
 
-### Develop
+### 3. Install Dependencies
 
-To develop all apps and packages, run the following command:
+Install all the project dependencies by running:
 
+```sh
+pnpm install
 ```
-cd my-turborepo
+
+This will download and install all required packages defined in your `package.json`.
+
+---
+
+## Database Setup
+
+### 1. Prisma Configuration
+
+Make sure you have configured the Prisma connection in the `.env` file with your database settings.
+
+### 2. Generate Prisma Client
+
+After setting up your database connection, generate the Prisma client by running:
+
+```sh
+pnpm db:generate
+```
+
+This will create the Prisma client necessary to interact with your database.
+
+---
+
+## Running the Project
+
+Once all dependencies are installed and the Prisma client is generated, you can start the bot in development mode using the following command:
+
+```sh
 pnpm dev
 ```
 
-### Remote Caching
+This will start the bot locally, allowing you to test its functionality.
 
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+---
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup), then enter the following commands:
+## Discord Developer Portal Setup
 
-```
-cd my-turborepo
-npx turbo login
-```
+If you haven’t already created a Discord bot, follow these steps:
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+1. Visit the [Discord Developer Portal](https://discord.com/developers/docs/intro).
+2. Create a new application and add a bot to it.
+3. Copy the **bot token** from the application settings.
+4. Set up your `.env` file with the following content:
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+   ```sh
+   DISCORD_TOKEN=your-bot-token-here
+   ```
 
-```
-npx turbo link
-```
+   Replace `your-bot-token-here` with the actual bot token you copied from the developer portal.
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+## License
 
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+This project is licensed under the [MIT License](./LICENSE). Feel free to use, modify, and distribute as per the terms of the license.
+
+---
+
+## Contributing
+
+If you would like to contribute to the project, feel free to open a pull request or issue.
