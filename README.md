@@ -33,8 +33,8 @@ Make sure the following tools are installed on your machine:
 Clone this repository to your local machine using the following command:
 
 ```sh
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/serudda/discord-bot.git
+cd discord-bot
 ```
 
 ### 2. Install pnpm (if you don't have it installed globally)
