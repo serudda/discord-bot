@@ -1,0 +1,49 @@
+{
+  "name": "@discord-bot/nextjs",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Indie Creators HQ",
+  "scripts": {
+    "build": "pnpm with-env next build ",
+    "clean": "git clean -xdf .next .turbo node_modules dist",
+    "dev": "pnpm with-env next dev",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "start": "pnpm with-env next start",
+    "type-check": "tsc --noEmit",
+    "with-env": "dotenv -e ../../.env.${NODE_ENV:-local} --"
+  },
+  "dependencies": {
+    "@discord-bot/api": "workspace:*",
+    "@discord-bot/db": "workspace:*",
+    "@discord-bot/error-handler": "workspace:*",
+    "@tailwindcss/postcss": "0.0.0-development.1",
+    "@tanstack/react-query": "^4.36.1",
+    "@trpc/client": "^10.45.2",
+    "@trpc/next": "^10.45.2",
+    "@trpc/react-query": "^10.45.2",
+    "@trpc/server": "^10.45.2",
+    "eslint": "^9.11.1",
+    "eslint-config-next": "14.2.15",
+    "eslint-config-prettier": "9.1.0",
+    "next": "^13.3.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "superjson": "1.9.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@discord-bot/eslint-config": "workspace:*",
+    "@discord-bot/tailwind-preset": "workspace:*",
+    "@discord-bot/typescript-config": "workspace:*",
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.8",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "dotenv-cli": "^7.4.2",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "8.7.0"
+  }
+}
