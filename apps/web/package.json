@@ -3,14 +3,12 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro check && astro build",
-    "preview": "astro preview",
-    "astro": "astro",
+    "dev:deprecated": "astro dev",
+    "startbuild:deprecated": "astro dev",
+    "build:deprecated": "astro check && astro build",
+    "preview:deprecated": "astro preview",
+    "astro:deprecated": "astro",
     "clean": "git clean -xdf .turbo node_modules dist",
-    "lint": "eslint .",
-    "lint:fix": "pnpm lint --fix",
     "type-check": "astro-check"
   },
   "dependencies": {
