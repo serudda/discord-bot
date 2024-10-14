@@ -1,0 +1,16 @@
+{
+  "extends": ["@discord-bot/typescript-config/base.json"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "jsx": "preserve",
+    "paths": {
+      "~/*": ["./src/*"],
+      "@discord-bot/api": ["../../packages/api/src"],
+      "@discord-bot/tailwind-preset": ["../../tooling/tailwind-preset/src"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
