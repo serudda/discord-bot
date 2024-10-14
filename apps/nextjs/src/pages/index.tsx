@@ -16,12 +16,18 @@ const Home: NextPage = () => {
 
   return (
     <>
-      <main className="bg-neutral-900 grid grid-cols-4 gap-x-4 place-items-center  gap-y-10 p-4">
-        {data?.result.cards?.map((card, index) => (
-          <div key={card.id} className="card-container" style={{ '--delay': `${index * 0.1}s` } as React.CSSProperties}>
-            <img src={card.image} alt={card.name} className="w-48 h-62  card-image" />
-          </div>
-        ))}
+      <main className="bg-neutral-900 ">
+        <div className="container mx-auto grid grid-cols-4 gap-x-4 place-items-center  gap-y-10 p-4">
+          {data?.result.cards?.map((card, index) => (
+            <div
+              key={card.id}
+              className="card-container"
+              style={{ '--delay': `${index * 0.1}s` } as React.CSSProperties}
+            >
+              <img src={card.image} alt={card.name} className="w-48 h-62  card-image" />
+            </div>
+          ))}
+        </div>
       </main>
     </>
   );
