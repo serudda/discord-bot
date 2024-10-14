@@ -142,8 +142,8 @@ importers:
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/node':
-        specifier: ^20
-        version: 20.16.11
+        specifier: ^22.5.5
+        version: 22.7.4
       '@types/react':
         specifier: ^18
         version: 18.3.11
@@ -171,27 +171,18 @@ importers:
       '@astrojs/check':
         specifier: ^0.9.3
         version: 0.9.3(prettier-plugin-astro@0.14.1)(prettier@3.3.3)(typescript@5.6.2)
-      '@astrojs/tailwind':
-        specifier: ^5.1.2
-        version: 5.1.2(astro@4.15.9(@types/node@22.7.4)(lightningcss@1.27.0)(rollup@4.22.5)(typescript@5.6.2))(tailwindcss@3.4.13(ts-node@10.9.2(@types/node@22.7.4)(typescript@5.6.2)))(ts-node@10.9.2(@types/node@22.7.4)(typescript@5.6.2))
       '@astrojs/ts-plugin':
         specifier: ^1.10.2
         version: 1.10.2
       '@discord-bot/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint-config
-      '@discord-bot/tailwind-preset':
-        specifier: workspace:*
-        version: link:../../tooling/tailwind-preset
       astro:
         specifier: ^4.15.9
         version: 4.15.9(@types/node@22.7.4)(lightningcss@1.27.0)(rollup@4.22.5)(typescript@5.6.2)
       eslint:
         specifier: ^9.11.1
         version: 9.11.1(jiti@2.3.3)
-      tailwindcss:
-        specifier: ^3.4.13
-        version: 3.4.13(ts-node@10.9.2(@types/node@22.7.4)(typescript@5.6.2))
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
@@ -6343,16 +6334,6 @@ snapshots:
   '@astrojs/prism@3.1.0':
     dependencies:
       prismjs: 1.29.0
-
-  '@astrojs/tailwind@5.1.2(astro@4.15.9(@types/node@22.7.4)(lightningcss@1.27.0)(rollup@4.22.5)(typescript@5.6.2))(tailwindcss@3.4.13(ts-node@10.9.2(@types/node@22.7.4)(typescript@5.6.2)))(ts-node@10.9.2(@types/node@22.7.4)(typescript@5.6.2))':
-    dependencies:
-      astro: 4.15.9(@types/node@22.7.4)(lightningcss@1.27.0)(rollup@4.22.5)(typescript@5.6.2)
-      autoprefixer: 10.4.20(postcss@8.4.47)
-      postcss: 8.4.47
-      postcss-load-config: 4.0.2(postcss@8.4.47)(ts-node@10.9.2(@types/node@22.7.4)(typescript@5.6.2))
-      tailwindcss: 3.4.13(ts-node@10.9.2(@types/node@22.7.4)(typescript@5.6.2))
-    transitivePeerDependencies:
-      - ts-node
 
   '@astrojs/telemetry@3.1.0':
     dependencies:
