@@ -10,7 +10,7 @@
     "clean": "git clean -xdf node_modules",
     "dev": "pnpm with-env node --import tsx src/index.ts",
     "lint": "eslint .",
-    "lint:fix": "pnpm lint --fix",
+    "lint:fix": "eslint . --fix",
     "test": "echo \"Error: no test specified\" && exit 1",
     "type-check": "tsc --noEmit",
     "with-env": "dotenv -e ../../.env.${NODE_ENV:-local} --",
