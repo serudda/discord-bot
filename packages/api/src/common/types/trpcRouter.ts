@@ -1,10 +1,10 @@
-import type { PrismaClient } from '@prisma/client';
+import { type PrismaClient } from '@prisma/client';
 
-export type Ctx = {
+export interface Ctx {
   prisma: PrismaClient;
-};
+}
 
-export type Params<T> = {
+export interface Params<T> {
   ctx: Ctx;
   input: T;
-};
+}

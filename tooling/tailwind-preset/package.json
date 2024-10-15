@@ -2,8 +2,7 @@
   "name": "@discord-bot/tailwind-preset",
   "version": "0.0.1",
   "description": "Shared TailwindCSS config",
-  "main": "./src/tailwind.config.js",
-  "types": "./src/tailwind-config.d.ts",
+  "main": "./src/tailwind.config.ts",
   "type": "module",
   "scripts": {
     "clean": "git clean -xdf .turbo node_modules dist"

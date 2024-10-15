@@ -1,5 +1,5 @@
 import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
-import { Ctx, getRandomRarity, Response, TRPCErrorCode, type Params } from '../common';
+import { getRandomRarity, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
   AddCoinsInputType,
   BuyPackInputType,
@@ -302,7 +302,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       }
 
       // Add cards to user's collection
-      const userCards = await randomCards.map(async (card) => {
+      const userCards = randomCards.map(async (card) => {
         if (!card) return;
 
         // Add user card

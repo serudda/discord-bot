@@ -186,6 +186,16 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
       };
     }
 
+    // TODO: Create a TypeGuard
+    if (!newUser?.result?.user?.id) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
     // Create account
     const newAccount = await createAccountHandler({
       ctx,
@@ -193,7 +203,7 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
         type: 'discord',
         provider: 'discord',
         providerAccountId: discordId,
-        userId: newUser?.result?.user?.id as string,
+        userId: newUser.result.user.id,
       },
     });
 

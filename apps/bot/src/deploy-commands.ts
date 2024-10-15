@@ -1,5 +1,5 @@
 import path from 'path';
-import { Command } from './common';
+import { type Command } from './common';
 import { getFilesRecursively } from './utils';
 import { REST, Routes } from 'discord.js';
 
@@ -43,4 +43,4 @@ export const deployCommands = async () => {
 };
 
 // Run the command deployment script
-deployCommands();
+void deployCommands();

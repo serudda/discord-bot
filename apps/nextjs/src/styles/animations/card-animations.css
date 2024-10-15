@@ -1,0 +1,60 @@
+.card-container {
+  opacity: 0;
+  animation: anima-fade-in-up 0.5s ease forwards;
+  animation-delay: var(--delay, 0s);
+  transition:
+    transform 0.5s,
+    filter 0.3s;
+
+  transition-timing-function: cubic-bezier(0.5, -0.5, 0.1, 1.5);
+}
+
+.card-image:hover {
+  transform: scale(1.05);
+}
+
+.card-container:has(~ *:hover),
+.card-container:hover ~ .card-container {
+  filter: grayscale(100%) blur(2px);
+}
+
+.card-image {
+  transition: transform 500ms
+    linear(
+      0,
+      0.009,
+      0.035 2.1%,
+      0.141 4.4%,
+      0.723 12.9%,
+      0.938 16.7%,
+      1.017,
+      1.077,
+      1.121,
+      1.149 24.3%,
+      1.159,
+      1.163,
+      1.161,
+      1.154 29.9%,
+      1.129 32.8%,
+      1.051 39.6%,
+      1.017 43.1%,
+      0.991,
+      0.977 51%,
+      0.974 53.8%,
+      0.975 57.1%,
+      0.997 69.8%,
+      1.003 76.9%,
+      1
+    );
+}
+
+@keyframes anima-fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

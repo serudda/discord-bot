@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Client } from 'discord.js';
+import { type Client } from 'discord.js';
 
 /**
  * Load and register all the events in the events folder.

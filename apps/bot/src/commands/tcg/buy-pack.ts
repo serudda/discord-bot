@@ -1,9 +1,9 @@
-import { Card } from '@discord-bot/db';
-import { ErrorCode, ErrorMessages } from '@discord-bot/error-handler';
+import { type Card } from '@discord-bot/db';
+import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '../../api';
 import { mergeImages } from '../../utils';
 import { TRPCClientError } from '@trpc/client';
-import { AttachmentBuilder, CommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { AttachmentBuilder, SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
 const command = {
   data: new SlashCommandBuilder().setName('buy-pack').setDescription('Compra un sobre de 3 cartas'),

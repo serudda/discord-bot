@@ -1,9 +1,9 @@
-/** @type {import('tailwindcss').Config} */
-
+import { Config } from 'tailwindcss';
 import tailwindcssAnimated from 'tailwindcss-animated';
 
 export default {
   darkMode: 'class',
+  content: ['**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       animationDelay: {
@@ -68,4 +68,4 @@ export default {
     },
   },
   plugins: [tailwindcssAnimated],
-};
+} satisfies Config;

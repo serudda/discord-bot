@@ -2,6 +2,7 @@ import { appRouter, type AppRouter } from './root';
 import { createTRPCContext } from './trpc';
 import { type inferRouterInputs, type inferRouterOutputs } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import cors from 'cors';
 
 export * from './common';
 export { appRouter, type AppRouter } from './root';
@@ -27,6 +28,7 @@ export type RouterOutputs = inferRouterOutputs<AppRouter>;
  * Create a standalone HTTP server with the app router.
  */
 const server = createHTTPServer({
+  middleware: cors(),
   router: appRouter,
   createContext: createTRPCContext,
 });

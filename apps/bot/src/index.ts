@@ -5,7 +5,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
-(async () => {
+void (async () => {
   try {
     await loadCommands(client);
     await loadEvents(client);
