@@ -32,7 +32,7 @@ const command = {
       if (response?.result.status === Response.ERROR)
         await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
 
-      if (response?.result?.collection) {
+      if (response?.result && response?.result?.collection) {
         const { collection } = response.result;
         console.log('Collection:', collection[0]?.card.image);
         const msg = `${collection[0]?.card.image}`;

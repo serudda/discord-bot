@@ -64,6 +64,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
       '@typescript-eslint/array-type': ['off'],
+      '@typescript-eslint/prefer-optional-chain': 'off',
     },
   },
   {

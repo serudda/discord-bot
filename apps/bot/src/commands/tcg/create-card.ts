@@ -43,7 +43,7 @@ const command = {
       if (response?.result.status === Response.ERROR)
         await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
 
-      if (response?.result?.card) {
+      if (response?.result && response.result.card) {
         const response = `¡Has creado ${RANDOM_AMOUNT} cartas !\n`;
         await interaction.editReply(response);
       } else {

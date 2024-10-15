@@ -24,7 +24,7 @@ export async function loadEvents(client: Client) {
         const eventModule = await import(filePath);
         const event = eventModule.default;
 
-        if (event?.name && event.execute) {
+        if (event && event.name && event.execute) {
           if (event.once) {
             client.once(event.name, (...args) => event.execute(...args));
           } else {
@@ -41,7 +41,7 @@ export async function loadEvents(client: Client) {
       const eventModule = await import(fullPath);
       const event = eventModule.default;
 
-      if (event?.name && event.execute) {
+      if (event && event.name && event.execute) {
         if (event.once) {
           client.once(event.name, (...args) => event.execute(...args));
         } else {

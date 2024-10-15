@@ -36,7 +36,7 @@ const command = {
         }
       }
 
-      if (response?.result?.coins) {
+      if (response?.result && response.result.coins) {
         const msg = `¡Bienvenido ${response.result.name},\n ya puedes empezar a coleccionar cartas! Has recibido ${response.result.coins} monedas de regalo.\n Puedes usar el comando \`/buy-pack\` para comprar sobres de cartas.`;
         await interaction.editReply(msg);
       } else {

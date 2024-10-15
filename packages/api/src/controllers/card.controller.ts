@@ -280,7 +280,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if cards were selected
-      if (!randomCardsResponse?.result?.cards) {
+      if (!randomCardsResponse || !randomCardsResponse.result || !randomCardsResponse.result.cards) {
         return {
           result: {
             status: Response.ERROR,
