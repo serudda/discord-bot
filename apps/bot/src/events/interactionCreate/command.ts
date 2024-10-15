@@ -1,4 +1,4 @@
-import type { Interaction } from 'discord.js';
+import { type Interaction } from 'discord.js';
 
 export default {
   name: 'interactionCreate',

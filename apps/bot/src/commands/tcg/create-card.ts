@@ -1,9 +1,7 @@
-import type { ErrorCode } from '@discord-bot/error-handler';
-import { ErrorMessages } from '@discord-bot/error-handler';
+import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, rarities, Rarity, Response } from '../../api';
 import { TRPCClientError } from '@trpc/client';
-import type { CommandInteraction } from 'discord.js';
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
 const getRandomRarity = () => {
   const randomNum = Math.random();

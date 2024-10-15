@@ -1,5 +1,4 @@
-import type { CommandInteraction } from 'discord.js';
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
 const command = {
   data: new SlashCommandBuilder().setName('hello').setDescription('Responde con el nombre del usuario'),

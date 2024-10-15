@@ -1,7 +1,6 @@
-import type { AppRouter } from './root';
-import { appRouter } from './root';
+import { appRouter, type AppRouter } from './root';
 import { createTRPCContext } from './trpc';
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { type inferRouterInputs, type inferRouterOutputs } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 

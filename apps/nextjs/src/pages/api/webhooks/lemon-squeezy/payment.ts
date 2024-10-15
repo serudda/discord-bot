@@ -1,7 +1,7 @@
 import { appRouter, createTRPCContext, TRPCErrorCode } from '@discord-bot/api';
-import type { LemonSqueezyResponse } from '~/utils/api';
+import { type LemonSqueezyResponse } from '~/utils/api';
 import { TRPCError } from '@trpc/server';
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { type NextApiRequest, type NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Create context and caller

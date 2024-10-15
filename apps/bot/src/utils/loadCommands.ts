@@ -1,8 +1,7 @@
 import path from 'path';
-import type { Command } from '../common';
+import { type Command } from '../common';
 import { getFilesRecursively } from './getFilesRecursively';
-import type { Client } from 'discord.js';
-import { Collection } from 'discord.js';
+import { Collection, type Client } from 'discord.js';
 
 export const loadCommands = async (client: Client) => {
   client.commands = new Collection();

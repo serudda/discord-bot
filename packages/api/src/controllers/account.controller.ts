@@ -1,6 +1,6 @@
 import { AccountError } from '@discord-bot/error-handler';
 import { Response, TRPCErrorCode, type Params } from '../common';
-import type { CreateAccountInputType, GetAllProvidersByUserIdInputType } from '../schema/account.schema';
+import { type CreateAccountInputType, type GetAllProvidersByUserIdInputType } from '../schema/account.schema';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 

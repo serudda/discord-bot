@@ -1,9 +1,7 @@
-import type { ErrorCode } from '@discord-bot/error-handler';
-import { ErrorMessages, UserError } from '@discord-bot/error-handler';
+import { ErrorMessages, UserError, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '../../api';
 import { TRPCClientError } from '@trpc/client';
-import type { CommandInteraction } from 'discord.js';
-import { SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
 const command = {
   data: new SlashCommandBuilder().setName('start-game').setDescription('Empieza a coleccionar cartas'),

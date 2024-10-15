@@ -1,4 +1,4 @@
-import type { AppRouter } from '@discord-bot/api';
+import { type AppRouter } from '@discord-bot/api';
 import { createTRPCProxyClient, httpBatchLink, loggerLink } from '@trpc/client';
 import superjson from 'superjson';
 

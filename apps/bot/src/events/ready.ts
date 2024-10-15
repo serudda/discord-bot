@@ -1,5 +1,4 @@
-import type { Client } from 'discord.js';
-import { ActivityType } from 'discord.js';
+import { ActivityType, type Client } from 'discord.js';
 
 export default {
   name: 'ready',

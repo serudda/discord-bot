@@ -1,4 +1,4 @@
-import type { FormFieldState } from '../constants';
+import { type FormFieldState } from '../constants';
 
 export interface Input {
   /**

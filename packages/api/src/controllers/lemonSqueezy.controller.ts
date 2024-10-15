@@ -1,5 +1,5 @@
 import { Response, TRPCErrorCode, type LemonSqueezyVariant, type Params } from '../common';
-import type { GetVariantByIdInputType, SubscriptionCreatedInputType } from '../schema/lemonSqueezy.schema';
+import { type GetVariantByIdInputType, type SubscriptionCreatedInputType } from '../schema/lemonSqueezy.schema';
 import { addUserSubscriptionHandler, deleteUserSubscriptionHandler } from './subscription.controller';
 import { getSubscriptionPlanByProductIdHandler } from './subscriptionPlan.controller';
 import { TRPCError } from '@trpc/server';

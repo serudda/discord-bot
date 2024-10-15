@@ -1,5 +1,5 @@
 import { api, Rarity } from '~/utils/api';
-import type { NextPage } from 'next';
+import { type NextPage } from 'next';
 
 const Home: NextPage = () => {
   const { data, error, isLoading } = api.card.getAllCardsByRarity.useQuery({ rarity: Rarity.UNCOMMON });

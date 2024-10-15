@@ -1,5 +1,5 @@
 import path from 'path';
-import type { Command } from './common';
+import { type Command } from './common';
 import { getFilesRecursively } from './utils';
 import { REST, Routes } from 'discord.js';
 
