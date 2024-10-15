@@ -10,7 +10,7 @@ export const getFilesRecursively = (dir: string): Array<string> => {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
 
-    if (stat && stat.isDirectory()) {
+    if (stat?.isDirectory()) {
       // Recursively search subdirectories
       results = results.concat(getFilesRecursively(filePath));
     } else if (file.endsWith('.ts') || file.endsWith('.js')) {

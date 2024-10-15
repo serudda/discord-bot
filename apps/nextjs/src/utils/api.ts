@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-properties */
+
 import type { AppRouter } from '@discord-bot/api';
 import { httpBatchLink, loggerLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';

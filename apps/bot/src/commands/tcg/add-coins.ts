@@ -1,7 +1,7 @@
-import { ErrorCode, ErrorMessages } from '@discord-bot/error-handler';
+import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '../../api';
 import { TRPCClientError } from '@trpc/client';
-import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
 enum Option {
   user = 'usuario',
@@ -40,7 +40,7 @@ const command = {
       if (response?.result.status === Response.ERROR)
         await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
 
-      if (response?.result && response.result.coins) {
+      if (response?.result?.coins) {
         const response = `🎉 ¡Has dado ${coins} monedas a <@${discordId}>! 🎉\n`;
         await interaction.editReply(response);
       } else {

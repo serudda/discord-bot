@@ -1,7 +1,9 @@
-import { ErrorCode, ErrorMessages, UserError } from '@discord-bot/error-handler';
+import type { ErrorCode } from '@discord-bot/error-handler';
+import { ErrorMessages, UserError } from '@discord-bot/error-handler';
 import { api, Response } from '../../api';
 import { TRPCClientError } from '@trpc/client';
-import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
+import type { CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 const command = {
   data: new SlashCommandBuilder().setName('start-game').setDescription('Empieza a coleccionar cartas'),
@@ -36,7 +38,7 @@ const command = {
         }
       }
 
-      if (response?.result && response.result.coins) {
+      if (response?.result?.coins) {
         const msg = `¡Bienvenido ${response.result.name},\n ya puedes empezar a coleccionar cartas! Has recibido ${response.result.coins} monedas de regalo.\n Puedes usar el comando \`/buy-pack\` para comprar sobres de cartas.`;
         await interaction.editReply(msg);
       } else {

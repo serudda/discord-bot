@@ -1,25 +1,17 @@
+import { Response, TRPCErrorCode, type LemonSqueezyVariant, type Params } from '../common';
+import type { GetVariantByIdInputType, SubscriptionCreatedInputType } from '../schema/lemonSqueezy.schema';
+import { addUserSubscriptionHandler, deleteUserSubscriptionHandler } from './subscription.controller';
+import { getSubscriptionPlanByProductIdHandler } from './subscriptionPlan.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { Response, TRPCErrorCode, type LemonSqueezyVariant, type Params } from '../common';
-import type {
-  GetVariantByIdInputType,
-  SubscriptionCreatedInputType,
-} from '../schema/lemonSqueezy.schema';
-import {
-  addUserSubscriptionHandler,
-  deleteUserSubscriptionHandler,
-} from './subscription.controller';
-import { getSubscriptionPlanByProductIdHandler } from './subscriptionPlan.controller';
 
 /**
  * Subscription created (Lemon Squeezy)
- * @param ctx Ctx
- * @param input SubscriptionCreatedInputType
+ *
+ * @param ctx Ctx.
+ * @param input SubscriptionCreatedInputType.
  */
-export const subscriptionCreatedHandler = async ({
-  ctx,
-  input,
-}: Params<SubscriptionCreatedInputType>) => {
+export const subscriptionCreatedHandler = async ({ ctx, input }: Params<SubscriptionCreatedInputType>) => {
   try {
     const { productId, variantId, userEmail, renewsAt } = input;
 
@@ -153,9 +145,10 @@ export const subscriptionCreatedHandler = async ({
 };
 
 /**
- * Get variant by id
- * @param ctx Ctx
- * @param input GetVariantByIdInputType
+ * Get variant by id.
+ *
+ * @param ctx Ctx.
+ * @param input GetVariantByIdInputType.
  */
 export const getVariantByIdHandler = async ({ input }: Params<GetVariantByIdInputType>) => {
   try {
@@ -163,7 +156,7 @@ export const getVariantByIdHandler = async ({ input }: Params<GetVariantByIdInpu
 
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    headers.append('Authorization', `Bearer ${process.env.LEMON_SQUEEZY_API_KEY as string}`);
+    headers.append('Authorization', `Bearer ${process.env.LEMON_SQUEEZY_API_KEY!}`);
 
     const response = await fetch(`${process.env.LEMON_SQUEEZY_URL}/v1/variants/${variantId}`, {
       method: 'GET',

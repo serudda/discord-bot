@@ -1,4 +1,5 @@
-import { ActivityType, Client } from 'discord.js';
+import type { Client } from 'discord.js';
+import { ActivityType } from 'discord.js';
 
 export default {
   name: 'ready',
@@ -8,7 +9,7 @@ export default {
    *
    * @param client - The Discord client.
    */
-  async execute(client: Client) {
+  execute(client: Client) {
     console.log(`Bot is online! Logged in as ${client.user?.tag}`);
 
     client.user?.setPresence({

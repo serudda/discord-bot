@@ -1,7 +1,9 @@
-import { ErrorCode, ErrorMessages } from '@discord-bot/error-handler';
+import type { ErrorCode } from '@discord-bot/error-handler';
+import { ErrorMessages } from '@discord-bot/error-handler';
 import { api, rarities, Rarity, Response } from '../../api';
 import { TRPCClientError } from '@trpc/client';
-import { CommandInteraction, SlashCommandBuilder } from 'discord.js';
+import type { CommandInteraction } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 
 const getRandomRarity = () => {
   const randomNum = Math.random();
@@ -43,7 +45,7 @@ const command = {
       if (response?.result.status === Response.ERROR)
         await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
 
-      if (response?.result && response.result.card) {
+      if (response?.result?.card) {
         const response = `¡Has creado ${RANDOM_AMOUNT} cartas !\n`;
         await interaction.editReply(response);
       } else {

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Client } from 'discord.js';
+import type { Client } from 'discord.js';
 
 /**
  * Load and register all the events in the events folder.
@@ -24,7 +24,7 @@ export async function loadEvents(client: Client) {
         const eventModule = await import(filePath);
         const event = eventModule.default;
 
-        if (event && event.name && event.execute) {
+        if (event?.name && event.execute) {
           if (event.once) {
             client.once(event.name, (...args) => event.execute(...args));
           } else {
@@ -41,7 +41,7 @@ export async function loadEvents(client: Client) {
       const eventModule = await import(fullPath);
       const event = eventModule.default;
 
-      if (event && event.name && event.execute) {
+      if (event?.name && event.execute) {
         if (event.once) {
           client.once(event.name, (...args) => event.execute(...args));
         } else {
