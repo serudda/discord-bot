@@ -156,7 +156,7 @@ export const getVariantByIdHandler = async ({ input }: Params<GetVariantByIdInpu
 
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
-    headers.append('Authorization', `Bearer ${process.env.LEMON_SQUEEZY_API_KEY!}`);
+    headers.append('Authorization', `Bearer ${process.env.LEMON_SQUEEZY_API_KEY as string}`);
 
     const response = await fetch(`${process.env.LEMON_SQUEEZY_URL}/v1/variants/${variantId}`, {
       method: 'GET',

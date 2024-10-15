@@ -1,12 +1,12 @@
 import { AccountError, CommonError, UserError } from '@discord-bot/error-handler';
 import { PrismaErrorCode, Response, TRPCErrorCode, type Params } from '../common';
-import {
-  type CreateUserInputType,
-  type GetUserByDiscordIdInputType,
-  type GetUserByEmailInputType,
-  type GetUserByIdInputType,
-  type GetUserCoinsInputType,
-  type RegisterUserInputType,
+import type {
+  CreateUserInputType,
+  GetUserByDiscordIdInputType,
+  GetUserByEmailInputType,
+  GetUserByIdInputType,
+  GetUserCoinsInputType,
+  RegisterUserInputType,
 } from '../schema/user.schema';
 import { createAccountHandler } from './account.controller';
 import { Prisma } from '@prisma/client';

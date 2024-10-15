@@ -23,7 +23,7 @@ const command = {
 
         const images: Array<string> = [];
         cards.forEach((card?: Card) => {
-          images.push(card?.image!);
+          images.push(card?.image as string);
         });
 
         // Convert the image to buffer

@@ -1,14 +1,14 @@
 import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
 import { getRandomRarity, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
-import {
-  type AddCoinsInputType,
-  type BuyPackInputType,
-  type CreateCardInputType,
-  type GetAllCardsByRarityInputType,
-  type GetCollectionInputType,
-  type GetRandomCardByRarityInputType,
-  type GetRandomCardsInputType,
-  type SetCoinsInputType,
+import type {
+  AddCoinsInputType,
+  BuyPackInputType,
+  CreateCardInputType,
+  GetAllCardsByRarityInputType,
+  GetCollectionInputType,
+  GetRandomCardByRarityInputType,
+  GetRandomCardsInputType,
+  SetCoinsInputType,
 } from '../schema/card.schema';
 import { getUserByDiscordIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';

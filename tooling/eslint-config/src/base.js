@@ -60,11 +60,12 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
-      'import/consistent-type-specifier-style': ['error', 'prefer-inline'],
+      'import/consistent-type-specifier-style': ['off'],
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
       '@typescript-eslint/array-type': ['off'],
       '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/non-nullable-type-assertion-style': 'off',
     },
   },
   {
