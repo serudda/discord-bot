@@ -61,3 +61,13 @@ export const getCollectionInput = z.object({
   discordId: z.string(),
 });
 export type GetCollectionInputType = TypeOf<typeof getCollectionInput>;
+
+/*------------------------------------*/
+
+export const addCardToCollectionInput = z.object({
+  userId: z.string(),
+  cardId: z.string(),
+  quantity: z.number().optional().default(1),
+  isFoil: z.boolean().optional().default(false),
+});
+export type AddCardToCollectionInputType = TypeOf<typeof addCardToCollectionInput>;

@@ -1,6 +1,7 @@
 import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
 import { getRandomRarity, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
+  AddCardToCollectionInputType,
   AddCoinsInputType,
   BuyPackInputType,
   CreateCardInputType,
@@ -241,7 +242,8 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
   try {
     const { discordId } = input;
     const PACK_PRICE = 100;
-    const PACK_AMOUNT = 3;
+    const CARD_AMOUNT_PACK = 3;
+    const FOIL_PROBABILITY = 0.04;
 
     // Start transaction
     const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
@@ -275,7 +277,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       const randomCardsResponse = await getRandomCardsHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
         input: {
-          amount: PACK_AMOUNT,
+          amount: CARD_AMOUNT_PACK,
         },
       });
 
@@ -302,20 +304,39 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       }
 
       // Add cards to user's collection
-      const userCards = randomCards.map(async (card) => {
-        if (!card) return;
+      const newUserCards = await Promise.all(
+        randomCards.map(async (card) => {
+          if (!card) return;
 
-        // Add user card
-        await prismaTransaction.userCard.create({
-          data: {
-            userId: user.id,
-            cardId: card.id,
-          },
-        });
-      });
+          // Check if card is foil
+          const isFoil = Math.random() < FOIL_PROBABILITY;
+
+          // Add user card
+          const newAddedCard = await addCardToCollectionHandler({
+            ctx: { prisma: prismaTransaction } as Ctx,
+            input: {
+              userId: user.id,
+              cardId: card.id,
+              quantity: 1,
+              isFoil,
+            },
+          });
+
+          // Check if card was added to user's collection
+          if (!newAddedCard || newAddedCard.result.status === Response.ERROR) {
+            return {
+              status: Response.ERROR,
+              message: CardError.NoAddCardToUserCollection,
+            };
+          }
+          return newAddedCard.result.userCard;
+        }),
+      );
+
+      console.log('newUserCards: ', newUserCards);
 
       // Check if cards were added to user's collection
-      if (!userCards) {
+      if (!newUserCards) {
         return {
           result: {
             status: Response.ERROR,
@@ -340,7 +361,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       return {
         result: {
           status: Response.SUCCESS,
-          cards: randomCards,
+          newUserCards,
         },
       };
     });
@@ -603,6 +624,84 @@ export const getCollectionHandler = async ({ ctx, input }: Params<GetCollectionI
       result: {
         status: Response.SUCCESS,
         collection: userCollection,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Add card to user collection.
+ *
+ * @param ctx Ctx.
+ * @param input AddCardToCollectionInputType.
+ * @returns User's new card.
+ */
+export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardToCollectionInputType>) => {
+  try {
+    const { userId, cardId, quantity = 1, isFoil = false } = input;
+
+    // Add or update user card
+    const userCard = await ctx.prisma.userCard.upsert({
+      where: {
+        userId_cardId_isFoil: {
+          userId,
+          cardId,
+          isFoil,
+        },
+      },
+      update: {
+        quantity: {
+          increment: quantity,
+        },
+      },
+      create: {
+        userId,
+        cardId,
+        isFoil,
+        quantity,
+      },
+      include: {
+        card: true,
+      },
+    });
+
+    // Check if card was added to user
+    if (!userCard) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.NoAddCardToUserCollection,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        userCard,
       },
     };
   } catch (error: unknown) {

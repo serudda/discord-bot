@@ -120,9 +120,14 @@ model UserCard {
     userId    String   @map("user_id")
     card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
     cardId    String   @map("card_id")
+    isFoil    Boolean  @default(false) @map("is_foil")
+    quantity  Int      @default(1)
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
 
+    // Including 'isFoil' in the unique constraint allows users
+    // to own both the normal and Foil versions of the same card.
+    @@unique([userId, cardId, isFoil])
     @@map("user_cards")
 }
 
