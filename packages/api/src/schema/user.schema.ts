@@ -23,6 +23,13 @@ export type GetUserByEmailInputType = TypeOf<typeof getUserByEmailInput>;
 
 /*------------------------------------*/
 
+export const getUserByUsernameInput = z.object({
+  username: z.string(),
+});
+export type GetUserByUsernameInputType = TypeOf<typeof getUserByUsernameInput>;
+
+/*------------------------------------*/
+
 export const createUserInput = z.object({
   name: z.string(),
   username: z.string(),

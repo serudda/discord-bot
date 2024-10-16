@@ -5,6 +5,7 @@ import type {
   GetUserByDiscordIdInputType,
   GetUserByEmailInputType,
   GetUserByIdInputType,
+  GetUserByUsernameInputType,
   GetUserCoinsInputType,
   RegisterUserInputType,
 } from '../schema/user.schema';
@@ -57,6 +58,24 @@ export const getUserByEmailHandler = async ({ ctx, input }: Params<GetUserByEmai
   return ctx.prisma.user.findUnique({
     where: {
       email: input.email,
+    },
+    include: {
+      accounts: true,
+    },
+  });
+};
+
+/**
+ * Get user by username.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserByUsernameInputType.
+ * @returns User.
+ */
+export const getUserByUsernameHandler = async ({ ctx, input }: Params<GetUserByUsernameInputType>) => {
+  return ctx.prisma.user.findFirst({
+    where: {
+      username: input.username,
     },
     include: {
       accounts: true,

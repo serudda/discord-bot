@@ -2,6 +2,7 @@ import {
   createUserHandler,
   getUserByEmailHandler,
   getUserByIdHandler,
+  getUserByUsernameHandler,
   getUserCoinsHandler,
   registerUserHandler,
 } from '../controllers/user.controller';
@@ -9,6 +10,7 @@ import {
   createUserInput,
   getUserByEmailInput,
   getUserByIdInput,
+  getUserByUsernameInput,
   getUserCoinsInput,
   registerUserInput,
 } from '../schema/user.schema';
@@ -20,6 +22,10 @@ export const userRouter = createTRPCRouter({
   getByEmail: publicProcedure
     .input(getUserByEmailInput)
     .query(({ ctx, input }) => getUserByEmailHandler({ ctx, input })),
+
+  getUserByUsername: publicProcedure
+    .input(getUserByUsernameInput)
+    .query(({ ctx, input }) => getUserByUsernameHandler({ ctx, input })),
 
   create: publicProcedure.input(createUserInput).mutation(async ({ ctx, input }) => createUserHandler({ ctx, input })),
 
