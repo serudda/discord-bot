@@ -38,7 +38,7 @@ const command = {
         return;
       }
 
-      const response = await api.card.addCoins.mutate({ discordId: recipientId, amount: parseInt(coins) });
+      const response = await api.card.addCoins.mutate({ recipientId, senderId, amount: parseInt(coins) });
 
       if (response?.result.status === Response.ERROR) {
         await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
