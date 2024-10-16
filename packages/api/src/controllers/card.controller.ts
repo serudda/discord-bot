@@ -86,30 +86,38 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
  */
 export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>) => {
   try {
-    const { discordId, amount } = input;
+    const { senderId, recipientId, amount } = input;
 
-    console.log('discordId: ', discordId);
-    console.log('amount: ', amount);
+    // Get Sender user by Discord Id on Account table
+    const sender = await getUserByDiscordIdHandler({ ctx, input: { discordId: senderId } });
 
-    // Get user by Discord Id on Account table
-    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
-
-    console.log('user: ', user);
-
-    // Check if user exists
-    if (!user) {
+    // Check if sender exists
+    if (!sender) {
       return {
         result: {
           status: Response.ERROR,
-          message: UserError.UserNotFound,
+          message: UserError.SenderNotFound,
         },
       };
     }
 
-    // Increase user's coins
-    const userUpdated = await ctx.prisma.user.update({
+    // Get Recipient user by Discord Id on Account table
+    const recipient = await getUserByDiscordIdHandler({ ctx, input: { discordId: recipientId } });
+
+    // Check if recipient exists
+    if (!recipient) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.ReceiverNotFound,
+        },
+      };
+    }
+
+    // Increase recipient's coins
+    const recepientUpdated = await ctx.prisma.user.update({
       where: {
-        id: user.id,
+        id: recipient.id,
       },
       data: {
         coins: {
@@ -118,8 +126,8 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
       },
     });
 
-    // Check if user's coins were updated
-    if (!userUpdated) {
+    // Check if recipient's coins were updated
+    if (!recepientUpdated) {
       return {
         result: {
           status: Response.ERROR,
@@ -131,7 +139,7 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
     return {
       result: {
         status: Response.SUCCESS,
-        coins: userUpdated.coins,
+        coins: recepientUpdated.coins,
       },
     };
   } catch (error: unknown) {
