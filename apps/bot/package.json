@@ -22,6 +22,7 @@
     "@discord-bot/error-handler": "workspace:*",
     "@discordjs/rest": "^2.4.0",
     "@trpc/client": "^10.45.2",
+    "dedent": "^1.5.3",
     "discord-api-types": "^0.37.101",
     "discord.js": "^14.7.1",
     "jimp": "^1.6.0",
