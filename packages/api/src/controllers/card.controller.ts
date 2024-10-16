@@ -88,8 +88,13 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
   try {
     const { discordId, amount } = input;
 
+    console.log('discordId: ', discordId);
+    console.log('amount: ', amount);
+
     // Get user by Discord Id on Account table
     const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    console.log('user: ', user);
 
     // Check if user exists
     if (!user) {
