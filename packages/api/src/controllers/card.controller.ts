@@ -86,49 +86,95 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
  */
 export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>) => {
   try {
-    const { discordId, amount } = input;
+    const { senderId, recipientId, amount } = input;
 
-    // Get user by Discord Id on Account table
-    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    // Start transaction
+    const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
+      // Get Sender user by Discord Id on Account table
+      const sender = await getUserByDiscordIdHandler({
+        ctx: { prisma: prismaTransaction } as Ctx,
+        input: { discordId: senderId },
+      });
 
-    // Check if user exists
-    if (!user) {
+      // Check if sender exists
+      if (!sender) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: UserError.SenderNotFound,
+          },
+        };
+      }
+
+      // Get Recipient user by Discord Id on Account table
+      const recipient = await getUserByDiscordIdHandler({
+        ctx: { prisma: prismaTransaction } as Ctx,
+        input: { discordId: recipientId },
+      });
+
+      // Check if recipient exists
+      if (!recipient) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: UserError.ReceiverNotFound,
+          },
+        };
+      }
+
+      // Increase recipient's coins
+      const recepientUpdated = await prismaTransaction.user.update({
+        where: {
+          id: recipient.id,
+        },
+        data: {
+          coins: {
+            increment: amount,
+          },
+        },
+      });
+
+      // Check if recipient's coins were updated
+      if (!recepientUpdated) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.NoAddCoins,
+          },
+        };
+      }
+
+      // Decrease sender's coins
+      const senderUpdated = await prismaTransaction.user.update({
+        where: {
+          id: sender.id,
+        },
+        data: {
+          coins: {
+            decrement: amount,
+          },
+        },
+      });
+
+      // Check if sender's coins were updated
+      if (!senderUpdated) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.NoDecreaseCoins,
+          },
+        };
+      }
+
       return {
         result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
+          status: Response.SUCCESS,
+          coins: sender.coins,
         },
       };
-    }
-
-    // Increase user's coins
-    const userUpdated = await ctx.prisma.user.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        coins: {
-          increment: amount,
-        },
-      },
     });
 
-    // Check if user's coins were updated
-    if (!userUpdated) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.NoAddCoins,
-        },
-      };
-    }
-
-    return {
-      result: {
-        status: Response.SUCCESS,
-        coins: userUpdated.coins,
-      },
-    };
+    return result;
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
@@ -332,8 +378,6 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
           return newAddedCard.result.userCard;
         }),
       );
-
-      console.log('newUserCards: ', newUserCards);
 
       // Check if cards were added to user's collection
       if (!newUserCards) {

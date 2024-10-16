@@ -1,3 +1,4 @@
+export * from './formatMsg';
 export * from './getComponent';
 export * from './getFilesRecursively';
 export * from './loadCommands';

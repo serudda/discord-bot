@@ -22,7 +22,12 @@ import { z } from 'zod';
  * @returns User.
  */
 export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInputType>) =>
-  ctx.prisma.user.findUnique({ where: { id: input.id }, include: { subscription: true } });
+  ctx.prisma.user.findUnique({
+    where: { id: input.id },
+    include: {
+      accounts: true,
+    },
+  });
 
 /**
  * Get user by Discord Id.
