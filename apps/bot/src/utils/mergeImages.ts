@@ -5,12 +5,25 @@ import { Jimp } from 'jimp';
  *
  * @param imageUrls - Array of URLs of the images to merge.
  * @param bgImageUrl - URL of the background image.
+ * @param foilFlags - Array of booleans indicating which
+ *   images are foil.
+ * @param foilEmblemUrl - URL of the foil emblem image.
  * @param margin - Margin between images.
  * @returns - The merged image as a buffer.
  */
-export const mergeImages = async (imageUrls: Array<string>, bgImageUrl?: string, margin = 20): Promise<Buffer> => {
+export const mergeImages = async (
+  imageUrls: Array<string>,
+  foilFlags: Array<boolean>,
+  foilEmblemUrl?: string,
+  bgImageUrl?: string,
+  margin = 20,
+): Promise<Buffer> => {
   // Load all images in the array
   const images = await Promise.all(imageUrls.map((url) => Jimp.read(url)));
+
+  // Load the foil emblem if provided
+  let foilEmblem;
+  if (foilEmblemUrl) foilEmblem = await Jimp.read(foilEmblemUrl);
 
   // Calculate the final width and height, considering the margins
   const finalWidth = images.reduce((width, img) => width + img.bitmap.width, 0) + margin * (images.length + 1);
@@ -34,9 +47,18 @@ export const mergeImages = async (imageUrls: Array<string>, bgImageUrl?: string,
 
   // Composite each image with margin
   let xPosition = margin;
-  for (const img of images) {
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
     finalImage.composite(img, xPosition, margin);
-    xPosition += img.bitmap.width + margin;
+
+    // If the image is foil, add the emblem to the top-left corner
+    if (foilFlags[i] && foilEmblem) {
+      const emblemXPosition = xPosition + img!.bitmap.width - foilEmblem.bitmap.width - 20;
+      const emblemYPosition = margin + 50;
+      finalImage.composite(foilEmblem, emblemXPosition, emblemYPosition); // Position emblem slightly offset
+    }
+
+    xPosition += img!.bitmap.width + margin;
   }
 
   // Convert the final image to buffer

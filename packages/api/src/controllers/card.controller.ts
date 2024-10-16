@@ -304,26 +304,39 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       }
 
       // Add cards to user's collection
-      const userCards = randomCards.map(async (card) => {
-        if (!card) return;
+      const newUserCards = await Promise.all(
+        randomCards.map(async (card) => {
+          if (!card) return;
 
-        // Check if card is foil
-        const isFoil = Math.random() < FOIL_PROBABILITY;
+          // Check if card is foil
+          const isFoil = Math.random() < FOIL_PROBABILITY;
 
-        // Add user card
-        await addCardToCollectionHandler({
-          ctx: { prisma: prismaTransaction } as Ctx,
-          input: {
-            userId: user.id,
-            cardId: card.id,
-            quantity: 1,
-            isFoil,
-          },
-        });
-      });
+          // Add user card
+          const newAddedCard = await addCardToCollectionHandler({
+            ctx: { prisma: prismaTransaction } as Ctx,
+            input: {
+              userId: user.id,
+              cardId: card.id,
+              quantity: 1,
+              isFoil,
+            },
+          });
+
+          // Check if card was added to user's collection
+          if (!newAddedCard || newAddedCard.result.status === Response.ERROR) {
+            return {
+              status: Response.ERROR,
+              message: CardError.NoAddCardToUserCollection,
+            };
+          }
+          return newAddedCard.result.userCard;
+        }),
+      );
+
+      console.log('newUserCards: ', newUserCards);
 
       // Check if cards were added to user's collection
-      if (!userCards) {
+      if (!newUserCards) {
         return {
           result: {
             status: Response.ERROR,
@@ -348,7 +361,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       return {
         result: {
           status: Response.SUCCESS,
-          cards: randomCards,
+          newUserCards,
         },
       };
     });
@@ -669,6 +682,9 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
         cardId,
         isFoil,
         quantity,
+      },
+      include: {
+        card: true,
       },
     });
 
