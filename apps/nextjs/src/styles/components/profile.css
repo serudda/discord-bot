@@ -1,0 +1,25 @@
+.profile-container {
+  perspective: 1000px;
+  z-index: 1000;
+}
+.profile-image,
+.profile-back {
+  backface-visibility: hidden;
+  transition: transform 0.5s;
+}
+
+.profile-back {
+  border: 1px solid rgba(136, 136, 136, 0.5);
+}
+.profile-image {
+  transform-style: preserve-3d;
+}
+.profile-back {
+  transform: rotateY(180deg);
+}
+.profile-container:hover .profile-image {
+  transform: rotateY(180deg);
+}
+.profile-container:hover .profile-back {
+  transform: rotateY(0deg);
+}
