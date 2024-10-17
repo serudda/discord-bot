@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { api } from '~/utils/api';
 import { rarityOrder } from '~/common/constants/card';
-import { RaritySection } from './_components/RaritySection';
-import { UserCardRarities } from './_components/UserCardRarities';
-import { UserProfileImage } from './_components/UserProfileImage';
-import { createCardCountMap } from './_utils/cardUtils';
+import { createCardCountMap, RaritySection, UserCardRarities, UserProfileImage } from '../../components/UserCollection';
 import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 
