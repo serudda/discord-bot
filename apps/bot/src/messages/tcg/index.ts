@@ -1,3 +1,3 @@
-export * from './add-coins';
 export * from './collection';
+export * from './give-coins';
 export * from './wallet';

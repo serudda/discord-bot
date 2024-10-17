@@ -1,6 +1,6 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '../../api';
-import { addCoinsMsg } from '../../messages';
+import { giveCoinsMsg } from '../../messages';
 import { formatMsg } from '../../utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
@@ -12,7 +12,7 @@ enum Option {
 
 const command = {
   data: new SlashCommandBuilder()
-    .setName('add-coins')
+    .setName('give-coins')
     .setDescription('Da monedas a otro jugador')
     .addUserOption((option) =>
       option.setName(Option.user).setDescription('Usuario al que deseas dar monedas').setRequired(true),
@@ -32,29 +32,31 @@ const command = {
     try {
       await interaction.deferReply();
 
+      // Check if sender is the same as recipient
+      if (senderId === recipientId) {
+        await interaction.editReply(ErrorMessages.GiveCoinsRecipientEqualsSender);
+        return;
+      }
+
       // Check if user exists
       if (!recipientId) {
         await interaction.editReply(ErrorMessages.UserNotFound);
         return;
       }
 
-      const response = await api.card.addCoins.mutate({ recipientId, senderId, amount: parseInt(coins) });
+      const response = await api.card.giveCoins.mutate({ recipientId, senderId, amount: parseInt(coins) });
 
       if (response?.result.status === Response.ERROR) {
         await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
         return;
-      }
-
-      if (response?.result && response.result.coins) {
-        const msg = formatMsg(addCoinsMsg.description, {
+      } else {
+        const msg = formatMsg(giveCoinsMsg.description, {
           coins,
           senderId,
           recipientId,
-          balance: response.result.coins,
+          balance: response?.result.coins as number,
         });
         await interaction.editReply(msg);
-      } else {
-        await interaction.editReply(ErrorMessages.NoCoins);
       }
 
       return;
