@@ -1,5 +1,7 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '../../api';
+import { api } from '../../api';
+import { collectionMsg } from '../../messages';
+import { formatMsg } from '../../utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -27,19 +29,14 @@ const command = {
         return;
       }
 
-      const response = await api.card.getCollection.query({ discordId });
+      const response = await api.user.getByDiscordId.query({ discordId });
+      if (!response) await interaction.editReply(ErrorMessages.Unknown);
 
-      if (response?.result.status === Response.ERROR)
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
-
-      if (response?.result && response?.result?.collection) {
-        const { collection } = response.result;
-        console.log('Collection:', collection[0]?.card.image);
-        const msg = `${collection[0]?.card.image}`;
-        await interaction.editReply(msg);
-      } else {
-        await interaction.editReply(ErrorMessages.NoUserCards);
-      }
+      const msg = formatMsg(collectionMsg.description, {
+        discordId,
+        url: `https://tcg-cards.vercel.app/${response?.id}/collection/`,
+      });
+      await interaction.editReply(msg);
     } catch (error) {
       if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
       await interaction.editReply(ErrorMessages.Unknown);

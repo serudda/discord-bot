@@ -1,14 +1,14 @@
 import type { Message } from '../../common';
 import dedent from 'dedent';
 
-export const addCoinsMsg: Message = {
-  title: '🎉 ¡Has dado monedas! 🎉',
+export const collectionMsg: Message = {
+  title: 'Ver tu colección',
   description: dedent`
       ============================================
-      
-      ¡<@{senderId}> ha dado **{coins}** monedas a <@{recipientId}>!
-      Nuevo balance es: **{balance}** monedas.
-      
+
+       **¡Aquí está la colección de cartas de <@{discordId}>!**
+      👉🏻 [Accede a la colección](<{url}>)
+
       ============================================
     `,
   color: '#FFD700',

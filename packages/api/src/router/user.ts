@@ -1,5 +1,6 @@
 import {
   createUserHandler,
+  getUserByDiscordIdHandler,
   getUserByEmailHandler,
   getUserByIdHandler,
   getUserByUsernameHandler,
@@ -8,6 +9,7 @@ import {
 } from '../controllers/user.controller';
 import {
   createUserInput,
+  getUserByDiscordIdInput,
   getUserByEmailInput,
   getUserByIdInput,
   getUserByUsernameInput,
@@ -18,6 +20,10 @@ import { createTRPCRouter, publicProcedure } from '../trpc';
 
 export const userRouter = createTRPCRouter({
   getById: publicProcedure.input(getUserByIdInput).query(({ ctx, input }) => getUserByIdHandler({ ctx, input })),
+
+  getByDiscordId: publicProcedure
+    .input(getUserByDiscordIdInput)
+    .query(({ ctx, input }) => getUserByDiscordIdHandler({ ctx, input })),
 
   getByEmail: publicProcedure
     .input(getUserByEmailInput)
