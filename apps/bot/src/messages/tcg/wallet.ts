@@ -1,13 +1,12 @@
 import type { Message } from '../../common';
 import dedent from 'dedent';
 
-export const addCoinsMsg: Message = {
-  title: '🎉 ¡Has dado monedas! 🎉',
+export const walletMsg: Message = {
+  title: 'Ver tu billetera',
   description: dedent`
       ============================================
       
-      ¡<@{senderId}> ha dado **{coins}** monedas a <@{recipientId}>!
-      Nuevo balance es: **{balance}** monedas.
+      ¡<@{userId}> tienes **{coins}** monedas en tu billetera!
       
       ============================================
     `,

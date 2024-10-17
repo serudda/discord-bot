@@ -1,4 +1,4 @@
-import { AccountError, CommonError, UserError } from '@discord-bot/error-handler';
+import { AccountError, CardError, CommonError, UserError } from '@discord-bot/error-handler';
 import { PrismaErrorCode, Response, TRPCErrorCode, type Params } from '../common';
 import type {
   CreateUserInputType,
@@ -282,17 +282,60 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
  * @returns Coins.
  */
 export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInputType>) => {
-  return ctx.prisma.user.findFirst({
-    where: {
-      accounts: {
-        some: {
-          providerAccountId: input.discordId,
-          provider: 'discord',
+  try {
+    const { discordId } = input;
+
+    // Get user
+    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!user) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
         },
+      };
+    }
+
+    // Check if user has coins
+    if (!user.coins) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.NoCoins,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        coins: user.coins,
       },
-    },
-    select: {
-      coins: true,
-    },
-  });
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
 };
