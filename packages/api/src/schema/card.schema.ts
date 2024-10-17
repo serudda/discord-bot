@@ -10,6 +10,11 @@ export type BuyPackInputType = TypeOf<typeof buyPackInput>;
 
 /*------------------------------------*/
 
+export const getAllCardsInput = z.object({});
+export type GetAllCardsInputType = TypeOf<typeof getAllCardsInput>;
+
+/*------------------------------------*/
+
 export const getAllCardsByRarityInput = z.object({
   rarity: z.nativeEnum(Rarity),
 });

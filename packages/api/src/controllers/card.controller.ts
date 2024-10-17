@@ -6,6 +6,7 @@ import type {
   BuyPackInputType,
   CreateCardInputType,
   GetAllCardsByRarityInputType,
+  GetAllCardsInputType,
   GetCollectionInputType,
   GetRandomCardByRarityInputType,
   GetRandomCardsInputType,
@@ -426,6 +427,53 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get all cards.
+ *
+ * @param ctx Ctx.
+ * @param input GetAllCardsInputType.
+ * @returns All cards.
+ */
+export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>) => {
+  try {
+    // Get all cards
+    const cards = await ctx.prisma.card.findMany();
+
+    // Check if cards were found
+    if (!cards || cards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.NoCards,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        cards,
+      },
+    };
+  } catch (error: unknown) {
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        const message = UserError.UnAuthorized;
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message,
         });
       }
 
