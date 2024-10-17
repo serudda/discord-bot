@@ -2,6 +2,7 @@ export enum CardError {
   CardsNotFoundByRarety = 'CardsNotFoundByRarety',
   NoCards = 'NoCards',
   NoCoins = 'NoCoins',
+  NoCoinsToBuy = 'NoCoinsToBuy',
   RandomCardsNotFound = 'RandomCardsNotFound',
   NoAddCoins = 'NoAddCoins',
   NoDecreaseCoins = 'NoDecreaseCoins',
@@ -14,8 +15,9 @@ export enum CardError {
 export const CardErrors: Record<CardError, string> = {
   [CardError.CardsNotFoundByRarety]: 'No logre encontrar cartas con esa rareza',
   [CardError.NoCards]: 'No se encontraron cartas',
+  [CardError.NoCoins]: 'No tienes suficientes monedas',
+  [CardError.NoCoinsToBuy]: 'No tienes suficientes monedas para poder comprar un paquete',
   [CardError.RandomCardsNotFound]: 'No se pudo obtener cartas aleatorias por rareza',
-  [CardError.NoCoins]: 'No tienes suficientes monedas para poder comprar un paquete',
   [CardError.NoAddCoins]: 'No se pudieron añadir las monedas al usuario',
   [CardError.NoDecreaseCoins]: 'No se pudieron restar las monedas al usuario',
   [CardError.NoSetCoins]: 'No se pudieron asignar las monedas al usuario',

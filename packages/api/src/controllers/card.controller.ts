@@ -315,7 +315,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         return {
           result: {
             status: Response.ERROR,
-            message: CardError.NoCoins,
+            message: CardError.NoCoinsToBuy,
           },
         };
       }

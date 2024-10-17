@@ -1,5 +1,7 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api } from '../../api';
+import { api, Response } from '../../api';
+import { walletMsg } from '../../messages';
+import { formatMsg } from '../../utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -9,7 +11,7 @@ const command = {
     const discordId = interaction.user.id;
 
     try {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
 
       // Check if user exists
       if (!discordId) {
@@ -19,10 +21,19 @@ const command = {
 
       const response = await api.user.getCoins.query({ discordId });
 
-      if (!response?.coins) {
-        await interaction.editReply('No tienes monedas en tu billetera');
+      if (response?.result.status === Response.ERROR) {
+        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+        return;
+      }
+
+      if (response?.result && response.result.coins) {
+        const msg = formatMsg(walletMsg.description, {
+          userId: discordId,
+          coins: response.result.coins,
+        });
+        await interaction.editReply(msg);
       } else {
-        await interaction.editReply(`Tienes ${response.coins} monedas en tu billetera`);
+        await interaction.editReply(ErrorMessages.NoCoins);
       }
     } catch (error) {
       if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
