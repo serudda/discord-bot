@@ -2,20 +2,13 @@
   opacity: 0;
   animation: anima-fade-in-up 0.5s ease forwards;
   animation-delay: var(--delay, 0s);
-  transition:
-    transform 0.5s,
-    filter 0.3s;
+  transition: transform 0.5s;
 
   transition-timing-function: cubic-bezier(0.5, -0.5, 0.1, 1.5);
 }
 
 .card-image:hover {
   transform: scale(1.05);
-}
-
-.card-container:has(~ *:hover),
-.card-container:hover ~ .card-container {
-  filter: grayscale(100%) blur(2px);
 }
 
 .card-image {
