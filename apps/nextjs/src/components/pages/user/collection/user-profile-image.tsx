@@ -14,16 +14,20 @@ interface UserProfileImageProps {
 
 export const UserProfileImage = ({ userImage, ownedCardCount }: UserProfileImageProps) => {
   const classes = {
-    container: cn('profile-container relative w-40 h-40 mx-auto'),
+    container: cn('relative w-40 h-40 mx-auto group/profile z-50 duration-500'),
     profileImage: cn(
-      'profile-image',
+      'backface-hidden',
       'absolute inset-0 w-full h-full',
       'rounded-full',
       'transition-transform duration-500 ease-in-out',
       'hover:rotate-y-180',
+      'group-hover/profile:rotate-y-180',
     ),
     profileBack: cn(
-      '[ profile-back ]',
+      'backface-hidden',
+      'border border-gray-gray-300',
+      'rotate-y-180',
+      'group-hover/profile:rotate-y-0',
       'absolute inset-0 flex items-center justify-center',
       'bg-neutral-900 rounded-full',
       'rotate-y-180 transition-transform duration-500 ease-in-out',
