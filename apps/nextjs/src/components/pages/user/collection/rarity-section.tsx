@@ -1,5 +1,5 @@
 import type { Card } from '~/common';
-import { cn } from '~/lib/utils';
+import { cn } from '~/common/utils/cn';
 import { groupSingleCardById, type CardCountMap } from './utils/cardUtils';
 
 interface RaritySectionProps {
@@ -11,7 +11,7 @@ interface RaritySectionProps {
   /**
    * Whether to show unknown cards in this section.
    */
-  showUnknown: boolean;
+  shownUnownedCards: boolean;
 
   /**
    * A set of card IDs that the user owns.
@@ -31,7 +31,7 @@ interface RaritySectionProps {
 
 export const RaritySection = ({
   rarity,
-  showUnknown,
+  shownUnownedCards,
   groupByRarity,
   ownedCardIds,
   ownedCardMap,
@@ -49,9 +49,9 @@ export const RaritySection = ({
   const cardsInRarity = groupByRarity(rarity);
   const ownedCardsInRarity = cardsInRarity.filter((card) => ownedCardIds.has(card.id));
 
-  if (!showUnknown && ownedCardsInRarity.length === 0) return null;
+  if (!shownUnownedCards && ownedCardsInRarity.length === 0) return null;
 
-  const cardsToDisplay = showUnknown ? cardsInRarity : ownedCardsInRarity;
+  const cardsToDisplay = shownUnownedCards ? cardsInRarity : ownedCardsInRarity;
 
   const renderCardStack = (card: Card) => {
     const ownedCard = ownedCardMap.get(card.id);
