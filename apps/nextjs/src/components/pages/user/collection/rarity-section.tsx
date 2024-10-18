@@ -1,6 +1,6 @@
 import type { Card } from '~/common';
 import { cn } from '~/utils';
-import { groupSingleCardById, type CardCountMap } from './utils/cardUtils';
+import { groupSingleCardById, type CardCountMap } from './utils/groupSingleCardById';
 
 interface RaritySectionProps {
   /**
