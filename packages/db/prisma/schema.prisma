@@ -103,6 +103,7 @@ model User {
 
 model Card {
     id          String     @id @default(cuid())
+    cardNumber  Int        @unique @default(autoincrement()) @map("card_number")
     name        String
     description String?
     image       String

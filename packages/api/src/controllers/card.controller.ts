@@ -2,7 +2,6 @@ import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
 import { getRandomRarity, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
   AddCardToCollectionInputType,
-  AddCoinsInputType,
   BuyPackInputType,
   CreateCardInputType,
   GetAllCardsByRarityInputType,
@@ -10,6 +9,7 @@ import type {
   GetCollectionInputType,
   GetRandomCardByRarityInputType,
   GetRandomCardsInputType,
+  GiveCoinsInputType,
   SetCoinsInputType,
 } from '../schema/card.schema';
 import { getUserByDiscordIdHandler } from './user.controller';
@@ -79,13 +79,13 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
 };
 
 /**
- * Add coins to a user.
+ * Give coins to a user.
  *
  * @param ctx Ctx.
- * @param input AddCoinsInputType.
+ * @param input GiveCoinsInputType.
  * @returns User's coins.
  */
-export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>) => {
+export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType>) => {
   try {
     const { senderId, recipientId, amount } = input;
 
@@ -107,6 +107,16 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
         };
       }
 
+      // Check if sender has enough coins
+      if (sender.coins < amount) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.NoCoinsToGive,
+          },
+        };
+      }
+
       // Get Recipient user by Discord Id on Account table
       const recipient = await getUserByDiscordIdHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
@@ -119,28 +129,6 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
           result: {
             status: Response.ERROR,
             message: UserError.ReceiverNotFound,
-          },
-        };
-      }
-
-      // Increase recipient's coins
-      const recepientUpdated = await prismaTransaction.user.update({
-        where: {
-          id: recipient.id,
-        },
-        data: {
-          coins: {
-            increment: amount,
-          },
-        },
-      });
-
-      // Check if recipient's coins were updated
-      if (!recepientUpdated) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: CardError.NoAddCoins,
           },
         };
       }
@@ -167,10 +155,32 @@ export const addCoinsHandler = async ({ ctx, input }: Params<AddCoinsInputType>)
         };
       }
 
+      // Increase recipient's coins
+      const recepientUpdated = await prismaTransaction.user.update({
+        where: {
+          id: recipient.id,
+        },
+        data: {
+          coins: {
+            increment: amount,
+          },
+        },
+      });
+
+      // Check if recipient's coins were updated
+      if (!recepientUpdated) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.NoGiveCoins,
+          },
+        };
+      }
+
       return {
         result: {
           status: Response.SUCCESS,
-          coins: sender.coins,
+          coins: sender.coins - amount,
         },
       };
     });

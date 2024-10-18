@@ -1,21 +1,21 @@
 import {
-  addCoinsHandler,
   buyPackHandler,
   createCardHandler,
   getAllCardsByRarityHandler,
   getAllCardsHandler,
   getCollectionHandler,
   getRandomCardsHandler,
+  giveCoinsHandler,
   setCoinsHandler,
 } from '../controllers/card.controller';
 import {
-  addCoinsInput,
   buyPackInput,
   createCardInput,
   getAllCardsByRarityInput,
   getAllCardsInput,
   getCollectionInput,
   getRandomCardsInput,
+  giveCoinsInput,
   setCoinsInput,
 } from '../schema/card.schema';
 import { createTRPCRouter, publicProcedure } from '../trpc';
@@ -31,7 +31,7 @@ export const cardRouter = createTRPCRouter({
   getRandomCards: publicProcedure
     .input(getRandomCardsInput)
     .query(async ({ ctx, input }) => getRandomCardsHandler({ ctx, input })),
-  addCoins: publicProcedure.input(addCoinsInput).mutation(async ({ ctx, input }) => addCoinsHandler({ ctx, input })),
+  giveCoins: publicProcedure.input(giveCoinsInput).mutation(async ({ ctx, input }) => giveCoinsHandler({ ctx, input })),
   setCoins: publicProcedure.input(setCoinsInput).mutation(async ({ ctx, input }) => setCoinsHandler({ ctx, input })),
   createCard: publicProcedure
     .input(createCardInput)

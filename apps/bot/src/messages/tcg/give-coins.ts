@@ -1,7 +1,7 @@
 import type { Message } from '../../common';
 import dedent from 'dedent';
 
-export const addCoinsMsg: Message = {
+export const giveCoinsMsg: Message = {
   title: '🎉 ¡Has dado monedas! 🎉',
   description: dedent`
       ============================================

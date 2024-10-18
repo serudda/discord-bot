@@ -36,12 +36,12 @@ export type GetRandomCardByRarityInputType = TypeOf<typeof getRandomCardByRarity
 
 /*------------------------------------*/
 
-export const addCoinsInput = z.object({
+export const giveCoinsInput = z.object({
   senderId: z.string(),
   recipientId: z.string(),
   amount: z.number(),
 });
-export type AddCoinsInputType = TypeOf<typeof addCoinsInput>;
+export type GiveCoinsInputType = TypeOf<typeof giveCoinsInput>;
 
 /*------------------------------------*/
 
