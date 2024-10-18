@@ -14,7 +14,6 @@ const UserCollectionPage = () => {
   const { data: allCardsData } = api.card.getAllCards.useQuery({});
   const [showUnknown, setShowUnknown] = useState(false);
 
-  // Create a map of owned cards
   const ownedCardMap = new Map<string, CardCountMap>();
   collectionData?.result?.collection?.forEach((cardCountMap) => {
     ownedCardMap.set(cardCountMap.card.id, cardCountMap);
