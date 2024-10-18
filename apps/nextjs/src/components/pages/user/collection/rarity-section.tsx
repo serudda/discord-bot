@@ -46,7 +46,7 @@ export const RaritySection = ({
     ),
   };
 
-  // TODO:
+  // TODO: update this component to be more generic, in the future we gonna organize by different categories [rarity, set, type, etc]
 
   const cardsInRarity = groupByRarity(rarity);
   const ownedCardsInRarity = cardsInRarity.filter((card) => ownedCardIds.has(card.id));
