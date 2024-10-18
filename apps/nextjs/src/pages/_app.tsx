@@ -3,7 +3,6 @@ import { api } from '~/utils/api';
 import { type NextPage } from 'next';
 import { type AppProps } from 'next/app';
 
-import '../styles/animations/card-animations.css';
 import '../styles/globals.css';
 
 export type NextPageWithLayout<P = Record<string, never>, IP = P> = NextPage<P, IP> & {
