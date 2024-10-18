@@ -1,6 +1,6 @@
 import type { Card } from '~/common';
 import { cn } from '~/utils';
-import { groupSingleCardById, type CardCountMap } from './utils/groupSingleCardById';
+import { groupSingleCardById, type CardCountMap } from './utils/group-single-card-by-id';
 
 interface RaritySectionProps {
   /**
@@ -45,6 +45,8 @@ export const RaritySection = ({
       'bg-gradient-to-b from-50% from-amber-600 to-amber-800 bg-clip-text text-transparent',
     ),
   };
+
+  // TODO:
 
   const cardsInRarity = groupByRarity(rarity);
   const ownedCardsInRarity = cardsInRarity.filter((card) => ownedCardIds.has(card.id));
