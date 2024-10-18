@@ -14,9 +14,9 @@ interface UserProfileImageProps {
 
 export const UserProfileImage = ({ userImage, ownedCardCount }: UserProfileImageProps) => {
   const classes = {
-    container: cn('[ profile-container ] relative w-40 h-40 mx-auto'),
+    container: cn('profile-container relative w-40 h-40 mx-auto'),
     profileImage: cn(
-      '[ profile-image ]',
+      'profile-image',
       'absolute inset-0 w-full h-full',
       'rounded-full',
       'transition-transform duration-500 ease-in-out',

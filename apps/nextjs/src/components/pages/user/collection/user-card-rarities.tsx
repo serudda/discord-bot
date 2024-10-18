@@ -1,5 +1,3 @@
-/* _components/UserCardRarities.tsx */
-
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/components/ui/hover-card';
 import { EMBLEMS_IMAGES_PATH, Rarity } from '~/common';
 import { cn } from '~/lib/utils';

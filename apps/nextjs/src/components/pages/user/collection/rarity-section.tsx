@@ -1,6 +1,13 @@
 import type { Card } from '~/common';
 import { cn } from '~/lib/utils';
-import { CardStack } from './CardStack';
+import { CardStack } from './card-stack';
+import { groupSingleCardById } from './utils/cardUtils';
+
+interface CardCountMap {
+  card: Card;
+  quantity: number;
+  isFoil: boolean;
+}
 
 interface RaritySectionProps {
   /**
@@ -14,27 +21,27 @@ interface RaritySectionProps {
   showUnknown: boolean;
 
   /**
-   * A map of card IDs to the number of cards owned.
-   */
-  cardCountMap: Record<string, number>;
-
-  /**
    * A set of card IDs that the user owns.
    */
   ownedCardIds: Set<string>;
 
   /**
+   * A map of owned cards for quick lookup.
+   */
+  ownedCardMap: Map<string, CardCountMap>;
+
+  /**
    * A function that groups cards by rarity.
    */
-  groupByRarity: (rarity: string) => Card[];
+  groupByRarity: (rarity: string) => Array<Card>;
 }
 
 export const RaritySection = ({
   rarity,
   showUnknown,
   groupByRarity,
-  cardCountMap,
   ownedCardIds,
+  ownedCardMap,
 }: RaritySectionProps) => {
   const classes = {
     sectionContainer: cn('mb-8'),
@@ -51,20 +58,24 @@ export const RaritySection = ({
 
   if (!showUnknown && ownedCardsInRarity.length === 0) return null;
 
+  const cardsToDisplay = showUnknown ? cardsInRarity : ownedCardsInRarity;
+
   return (
     <div key={rarity} id={rarity.toLowerCase()} className={classes.sectionContainer}>
       <h2 className={classes.title}>
         {rarity.toUpperCase()}
-
         <span className={classes.cardCount}>
           {ownedCardsInRarity.length} / {cardsInRarity.length}
         </span>
       </h2>
 
       <div className={classes.cardGrid}>
-        {(showUnknown ? cardsInRarity : ownedCardsInRarity).map((card) => (
-          <CardStack key={card.id} card={card} cardCountMap={cardCountMap} ownedCardIds={ownedCardIds} />
-        ))}
+        {cardsToDisplay.map((card) => {
+          const ownedCard = ownedCardMap.get(card.id);
+          const cardGroup = ownedCard ? groupSingleCardById(ownedCard) : { foil: null, nonFoil: null };
+
+          return <CardStack key={card.id} cardGroup={cardGroup} card={card} isOwned={!!ownedCard} />;
+        })}
       </div>
     </div>
   );
