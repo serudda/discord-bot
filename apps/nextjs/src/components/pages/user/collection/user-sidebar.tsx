@@ -1,5 +1,6 @@
-import { cn, EMBLEMS_IMAGES_PATH, rarityOrder } from '~/common';
+import { EMBLEMS_IMAGES_PATH, rarityOrder } from '~/common';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components';
+import { cn } from '~/utils';
 
 interface UserSidebarProps {
   /**
