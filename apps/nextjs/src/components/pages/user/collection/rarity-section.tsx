@@ -1,6 +1,6 @@
 import type { Card } from '~/common';
 import { cn } from '~/lib/utils';
-import type { CardCountMap, CardGroup } from './utils/cardUtils';
+import { groupSingleCardById, type CardCountMap } from './utils/cardUtils';
 
 interface RaritySectionProps {
   /**
@@ -52,19 +52,6 @@ export const RaritySection = ({
   if (!showUnknown && ownedCardsInRarity.length === 0) return null;
 
   const cardsToDisplay = showUnknown ? cardsInRarity : ownedCardsInRarity;
-
-  const groupSingleCardById = (cardCountMap: CardCountMap): CardGroup => {
-    const { card, quantity, isFoil } = cardCountMap;
-    const cardGroup: CardGroup = { foil: null, nonFoil: null };
-
-    if (isFoil) {
-      cardGroup.foil = { ...card, quantity };
-    } else {
-      cardGroup.nonFoil = { ...card, quantity };
-    }
-
-    return cardGroup;
-  };
 
   const renderCardStack = (card: Card) => {
     const ownedCard = ownedCardMap.get(card.id);
