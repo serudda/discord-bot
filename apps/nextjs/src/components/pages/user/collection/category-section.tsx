@@ -97,14 +97,18 @@ export const CategorySection = ({
   return filteredCategories.map(
     (category) =>
       category && (
-        <div key={category.criteria} id={category.criteria.toLowerCase()} className="mb-8">
+        <div
+          key={category.criteria}
+          id={category.criteria.toLowerCase()}
+          className="mb-8 divide-y-2 divide-neutral-800"
+        >
           <h2 className="text-white text-2xl font-bold mb-4">
             {category.criteria.toUpperCase()}
             <span className="italic ml-4 text-lg bg-gradient-to-b from-50% from-amber-600 to-amber-800 bg-clip-text text-transparent">
               {category.ownedCardsInCategory.length} / {category.filteredCards.length}
             </span>
           </h2>
-          <div className="grid grid-cols-4 gap-x-4 gap-y-10">
+          <div className="grid grid-cols-4 gap-x-14 gap-y-10 pt-4">
             {category.cardsToDisplay.map((card) => (
               <CardStack key={card.id} card={card} isOwned={ownedCardIds.has(card.id)} ownedCardMap={ownedCardMap} />
             ))}

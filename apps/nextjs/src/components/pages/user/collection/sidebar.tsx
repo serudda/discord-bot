@@ -147,7 +147,7 @@ export const UserSidebar = ({
       <div className="w-full min-h-72 border border-orange-400/70 rounded-xl -translate-y-16 z-10 pt-16 px-8">
         <div className="grid grid-cols-5 gap-8 px-4 place-items-center mt-10">{renderRarities()}</div>
 
-        <div className="grid place-items-center mt-10 border-t border-orange-400/70 pt-10">
+        <div className="grid place-items-center mt-10 border-t border-orange-400/70 pt-6">
           <div className="flex flex-col items-center">
             <TooltipProvider>
               <Tooltip>
@@ -165,19 +165,19 @@ export const UserSidebar = ({
 
         {/* Filter Mode Select */}
         <Select defaultValue={FilterMode.Rarity} onValueChange={(value) => setActiveFilter(value as FilterMode)}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full mt-4">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value={FilterMode.Rarity}>Rarity</SelectItem>
               <SelectItem value={FilterMode.Alphabet}>Alphabet</SelectItem>
+              <SelectItem value={FilterMode.Rarity}>Rarity</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
 
         {/* Sort Order Select */}
-        <Select defaultValue={SortOrder.Descending} onValueChange={(value) => setSortOrder(value as SortOrder)}>
+        <Select defaultValue={SortOrder.Ascending} onValueChange={(value) => setSortOrder(value as SortOrder)}>
           <SelectTrigger className="w-full mt-4">
             <SelectValue />
           </SelectTrigger>

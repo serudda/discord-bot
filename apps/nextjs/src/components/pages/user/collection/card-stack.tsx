@@ -48,14 +48,14 @@ export const CardStack = ({ card, isOwned, ownedCardMap }: CardStackProps) => {
       {isOwned &&
         stackedCardDuplicates.map((_, stackIndex) => (
           <div key={stackIndex} className={classes.duplicateCards(stackIndex)}>
-            <img src={primaryCard.image} alt={`Duplicate ${stackIndex + 1}`} className="w-60 h-82 z-10" />
+            <img src={primaryCard.image} alt={`Duplicate ${stackIndex + 1}`} className=" z-10" />
           </div>
         ))}
 
       <img
         src={primaryCard.image}
         alt={primaryCard.name}
-        className={cn('w-60 h-82 relative z-20', { 'opacity-50': !isOwned })}
+        className={cn(' relative z-20', { 'opacity-50': !isOwned })}
       />
     </div>
   );

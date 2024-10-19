@@ -16,7 +16,7 @@ const UserCollectionPage = () => {
   const userCollection = collectionData?.result?.collection ?? [];
   const [showUnownedCards, setShowUnownedCards] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterMode>(FilterMode.Rarity);
-  const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Ascending);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
