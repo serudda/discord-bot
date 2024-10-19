@@ -1,2 +1,2 @@
-export * from './rarity-section';
+export * from './category-section';
 export * from './sidebar';
