@@ -1,5 +1,18 @@
-import { EMBLEMS_IMAGES_PATH, rarityOrder } from '~/common';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components';
+import { useMemo } from 'react';
+import { EMBLEMS_IMAGES_PATH, FilterMode, rarityOrder, SortOrder } from '~/common';
+import type { CardCountMap } from '~/components';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '~/components';
 import { cn } from '~/utils';
 
 interface UserSidebarProps {
@@ -9,12 +22,14 @@ interface UserSidebarProps {
   userImage: string;
 
   /**
-   * The total number of cards the user owns.
+   * The user's collection of cards, including quantities
+   * and foil status.
    */
-  ownedCardCount: number;
+  userCollection: Array<CardCountMap>;
 
   /**
-   * Whether to show unowned cards.
+   * A boolean indicating whether to display unowned cards
+   * in the collection.
    */
   showUnownedCards: boolean;
 
@@ -24,23 +39,27 @@ interface UserSidebarProps {
   setShowUnownedCards: (value: boolean) => void;
 
   /**
-   * The number of owned cards per rarity.
+   * A function to set the active filter for displaying
+   * cards. Can be used to filter cards by rarity or
+   * alphabet.
    */
-  ownedCountsPerRarity: Record<string, number>;
+  setActiveFilter: (mode: FilterMode) => void;
 
   /**
-   * The number of owned foil cards.
+   * A function to set the sorting order of cards.
+   * Determines whether cards are sorted in ascending or
+   * descending order.
    */
-  ownedFoilCount: number;
+  setSortOrder: (order: SortOrder) => void;
 }
 
 export const UserSidebar = ({
   userImage,
-  ownedCardCount,
+  userCollection,
   showUnownedCards,
   setShowUnownedCards,
-  ownedCountsPerRarity,
-  ownedFoilCount,
+  setActiveFilter,
+  setSortOrder,
 }: UserSidebarProps) => {
   const classes = {
     container: cn('sticky top-10 h-fit text-white'),
@@ -64,26 +83,30 @@ export const UserSidebar = ({
       'hover:rotate-y-0',
     ),
     cardCount: cn(
-      'text-4xl font-bold ',
+      'text-4xl font-bold',
       'bg-gradient-to-br from-amber-200 to-amber-500',
       'bg-clip-text text-transparent from-40%',
     ),
     cardCountText: cn(
       'mt-4',
-      'text-sm max-w-[15ch] font-bold ',
+      'text-sm max-w-[15ch] font-bold',
       'bg-gradient-to-br from-gray-200 to-gray-800',
       'bg-clip-text text-transparent from-60%',
     ),
-    rarityGrid: cn('grid grid-cols-5 gap-8 px-4 place-items-center mt-10'),
-    foilContainer: cn('grid place-items-center mt-10 border-t border-orange-400/70 pt-10'),
-    showUnownedLabel: cn('text-white mt-8 mb-4'),
-    setShowUnownedCheckbox: cn('mr-2'),
-    foilImage: cn('w-10 h-10'),
-    hoverCardImage: cn('min-w-8 w-full h-full'),
-    tooltipContent: cn('w-fit font-bold'),
-    sideBarContainer: cn('w-full min-h-72 border border-orange-400/70', 'rounded-xl -translate-y-16 z-10 pt-16 px-8'),
-    rarityCount: cn('text-sm mt-2 text-gray-500 font-bold'),
   };
+
+  const { ownedCountsPerRarity, ownedFoilCount } = useMemo(() => {
+    const rarityCounts: Record<string, number> = {};
+    let foilCount = 0;
+
+    userCollection.forEach(({ card, isFoil }) => {
+      if (card.rarity && !isFoil) rarityCounts[card.rarity] = (rarityCounts[card.rarity] ?? 0) + 1;
+
+      if (isFoil) foilCount += 1;
+    });
+
+    return { ownedCountsPerRarity: rarityCounts, ownedFoilCount: foilCount };
+  }, [userCollection]);
 
   const renderRarities = () => {
     return rarityOrder.map((rarity) => (
@@ -92,15 +115,15 @@ export const UserSidebar = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <img src={`${EMBLEMS_IMAGES_PATH}/${rarity}.png`} alt={rarity} className={classes.hoverCardImage} />
+                <img src={`${EMBLEMS_IMAGES_PATH}/${rarity}.png`} alt={rarity} className="min-w-8 w-full h-full" />
               </TooltipTrigger>
-              <TooltipContent className={classes.tooltipContent}>
+              <TooltipContent className="w-fit font-bold">
                 <p>{rarity}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </a>
-        <span className={classes.rarityCount}>{ownedCountsPerRarity[rarity] ?? 0}</span>
+        <span className="text-sm mt-2 text-gray-500 font-bold">{ownedCountsPerRarity[rarity] ?? 0}</span>
       </div>
     ));
   };
@@ -109,47 +132,70 @@ export const UserSidebar = ({
     <aside className={classes.container}>
       {/* User Profile Image */}
       <div className={classes.profileContainer}>
-        {/* Front of the Profile Image */}
         <div className={classes.profileImage}>
           <img src={userImage} alt="User Profile" className="w-full h-full rounded-full" />
         </div>
-
-        {/* Back of the Profile Pic */}
         <div className={classes.profileBack}>
           <div className="text-center">
-            <p className={classes.cardCount}>{ownedCardCount}</p>
+            <p className={classes.cardCount}>{userCollection.length}</p>
             <p className={classes.cardCountText}>TOTAL CARDS OWNED</p>
           </div>
         </div>
       </div>
 
       {/* User Card Rarities */}
-      <div className={classes.sideBarContainer}>
-        <div className={classes.rarityGrid}>{renderRarities()}</div>
+      <div className="w-full min-h-72 border border-orange-400/70 rounded-xl -translate-y-16 z-10 pt-16 px-8">
+        <div className="grid grid-cols-5 gap-8 px-4 place-items-center mt-10">{renderRarities()}</div>
 
-        <div className={classes.foilContainer}>
+        <div className="grid place-items-center mt-10 border-t border-orange-400/70 pt-10">
           <div className="flex flex-col items-center">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <img src={`${EMBLEMS_IMAGES_PATH}/FOIL.png`} className={classes.foilImage} alt="FOIL" />
+                  <img src={`${EMBLEMS_IMAGES_PATH}/FOIL.png`} className="w-10 h-10" alt="FOIL" />
                 </TooltipTrigger>
-                <TooltipContent className={classes.tooltipContent}>
+                <TooltipContent className="w-fit font-bold">
                   <p>FOIL</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <span className={classes.rarityCount}>{ownedFoilCount}</span>
+            <span className="text-sm mt-2 text-gray-500 font-bold">{ownedFoilCount}</span>
           </div>
         </div>
 
-        <div className={classes.showUnownedLabel}>
+        {/* Filter Mode Select */}
+        <Select defaultValue={FilterMode.Rarity} onValueChange={(value) => setActiveFilter(value as FilterMode)}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value={FilterMode.Rarity}>Rarity</SelectItem>
+              <SelectItem value={FilterMode.Alphabet}>Alphabet</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        {/* Sort Order Select */}
+        <Select defaultValue={SortOrder.Descending} onValueChange={(value) => setSortOrder(value as SortOrder)}>
+          <SelectTrigger className="w-full mt-4">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value={SortOrder.Ascending}>Ascending</SelectItem>
+              <SelectItem value={SortOrder.Descending}>Descending</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <div className="text-white mt-8 mb-4">
           <label>
             <input
               type="checkbox"
               checked={showUnownedCards}
               onChange={() => setShowUnownedCards(!showUnownedCards)}
-              className={classes.setShowUnownedCheckbox}
+              className="mr-2"
             />
             Show Unowned Cards
           </label>
