@@ -17,10 +17,10 @@ export interface CardCountMap {
 
 interface CategorySectionProps {
   /**
-   * The current filter mode selected by the user.
+   * The current category mode selected by the user.
    * Determines whether cards are filtered.
    */
-  activeFilter: FilterMode;
+  activeCategory: FilterMode;
 
   /**
    * The current sort order selected by the user. Determines
@@ -49,13 +49,13 @@ interface CategorySectionProps {
 }
 
 export const CategorySection = ({
-  activeFilter,
+  activeCategory,
   sortOrder,
   allCards,
   userCollection,
   showUnownedCards,
 }: CategorySectionProps) => {
-  const categoryCriteria = useMemo(() => getCategoryCriteria(activeFilter, sortOrder), [activeFilter, sortOrder]);
+  const categoryCriteria = useMemo(() => getCategoryCriteria(activeCategory, sortOrder), [activeCategory, sortOrder]);
 
   const { ownedCardMap, ownedCardIds } = useMemo(() => {
     const cardMap = new Map<string, CardCountMap>();
@@ -71,7 +71,7 @@ export const CategorySection = ({
 
   const filteredCategories = categoryCriteria.map((criteria) => {
     const filteredCards =
-      activeFilter === FilterMode.Alphabet
+      activeCategory === FilterMode.Alphabet
         ? allCards.filter((card) => card.name?.toUpperCase().startsWith(criteria))
         : allCards.filter((card) => card.rarity === criteria);
 

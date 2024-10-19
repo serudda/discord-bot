@@ -15,7 +15,7 @@ const UserCollectionPage = () => {
   const allCards = allCardsData?.result?.cards ?? [];
   const userCollection = collectionData?.result?.collection ?? [];
   const [showUnownedCards, setShowUnownedCards] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterMode>(FilterMode.Rarity);
+  const [activeCategory, setActiveCategory] = useState<FilterMode>(FilterMode.Rarity);
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Ascending);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -32,13 +32,13 @@ const UserCollectionPage = () => {
           userCollection={userCollection}
           showUnownedCards={showUnownedCards}
           setShowUnownedCards={setShowUnownedCards}
-          setActiveFilter={setActiveFilter}
+          setActiveCategory={setActiveCategory}
           setSortOrder={setSortOrder}
         />
 
         <div className="container mx-auto p-4">
           <CategorySection
-            activeFilter={activeFilter}
+            activeCategory={activeCategory}
             sortOrder={sortOrder}
             showUnownedCards={showUnownedCards}
             allCards={allCards}

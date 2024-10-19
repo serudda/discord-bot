@@ -39,11 +39,10 @@ interface UserSidebarProps {
   setShowUnownedCards: (value: boolean) => void;
 
   /**
-   * A function to set the active filter for displaying
-   * cards. Can be used to filter cards by rarity or
-   * alphabet.
+   * A function to set the active category for displaying
+   * cards.
    */
-  setActiveFilter: (mode: FilterMode) => void;
+  setActiveCategory: (mode: FilterMode) => void;
 
   /**
    * A function to set the sorting order of cards.
@@ -58,7 +57,7 @@ export const UserSidebar = ({
   userCollection,
   showUnownedCards,
   setShowUnownedCards,
-  setActiveFilter,
+  setActiveCategory,
   setSortOrder,
 }: UserSidebarProps) => {
   const classes = {
@@ -164,7 +163,7 @@ export const UserSidebar = ({
         </div>
 
         {/* Filter Mode Select */}
-        <Select defaultValue={FilterMode.Rarity} onValueChange={(value) => setActiveFilter(value as FilterMode)}>
+        <Select defaultValue={FilterMode.Rarity} onValueChange={(value) => setActiveCategory(value as FilterMode)}>
           <SelectTrigger className="w-full mt-4">
             <SelectValue />
           </SelectTrigger>
