@@ -1,26 +1,4 @@
-import type { Card } from '~/common';
-
-export interface CardGroup {
-  foil: (Card & { quantity: number }) | null;
-  nonFoil: (Card & { quantity: number }) | null;
-}
-
-export interface CardCountMap {
-  /**
-   * The card information.
-   */
-  card: Card;
-
-  /**
-   * The quantity of the card owned by the user.
-   */
-  quantity: number;
-
-  /**
-   * Whether the card is foil or non-foil.
-   */
-  isFoil: boolean;
-}
+import type { CardCountMap, CardGroup } from '../rarity-section';
 
 /**
  * The function `groupSingleCardById` takes a `cardCountMap`
