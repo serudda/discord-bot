@@ -20,5 +20,10 @@ import { Rarity } from './api';
  */
 export const getCategoryCriteria = (filterMode: FilterMode, sortOrder: SortOrder): Array<string | Rarity> => {
   const types = filterMode === FilterMode.Rarity ? Object.values(Rarity) : ALPHABET.split('');
-  return sortOrder === SortOrder.Ascending ? types : [...types].reverse();
+
+  if (filterMode === FilterMode.Rarity) {
+    return sortOrder === SortOrder.Ascending ? [...types].reverse() : types;
+  } else {
+    return sortOrder === SortOrder.Ascending ? types : [...types].reverse();
+  }
 };
