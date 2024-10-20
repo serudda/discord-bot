@@ -1,4 +1,4 @@
-import type { CardCountMap, CardGroup } from '../rarity-section';
+import type { CardCountMap, CardGroup } from '../category-section';
 
 /**
  * The function `groupSingleCardById` takes a `cardCountMap`

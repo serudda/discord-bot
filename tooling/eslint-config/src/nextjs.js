@@ -13,6 +13,7 @@ export default [
       // TypeError: context.getAncestors is not a function
       '@next/next/no-duplicate-head': 'off',
       '@next/next/no-page-custom-font': 'off',
+      '@next/next/no-img-element': 'off',
     },
   },
 ];
