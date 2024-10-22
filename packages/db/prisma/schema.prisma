@@ -101,6 +101,18 @@ model User {
     @@map("users")
 }
 
+model Season {
+    id        String   @id @default(cuid())
+    name      String
+    startDate DateTime @map("start_date")
+    endDate   DateTime @map("end_date")
+    cards     Card[]
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@map("seasons")
+}
+
 model Card {
     id          String     @id @default(cuid())
     cardNumber  Int        @unique @default(autoincrement()) @map("card_number")
@@ -109,6 +121,8 @@ model Card {
     image       String
     rarity      Rarity
     userCards   UserCard[]
+    season      Season?    @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+    seasonId    String?    @map("season_id")
     createdAt   DateTime   @default(now()) @map("created_at")
     updatedAt   DateTime   @updatedAt @map("updated_at")
 
