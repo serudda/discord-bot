@@ -6,6 +6,7 @@ import type {
   CreateCardInputType,
   GetAllCardsByRarityInputType,
   GetAllCardsInputType,
+  GetCardsBySeasonInputType,
   GetCollectionInputType,
   GetRandomCardByRarityInputType,
   GetRandomCardsInputType,
@@ -465,7 +466,7 @@ export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>) 
       return {
         result: {
           status: Response.ERROR,
-          message: CardError.NoCards,
+          message: CardError.CardsNotFound,
         },
       };
     }
@@ -477,6 +478,68 @@ export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>) 
       },
     };
   } catch (error: unknown) {
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        const message = UserError.UnAuthorized;
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get all cards by season.
+ *
+ * @param ctx Ctx.
+ * @param input GetCardsBySeasonInputType.
+ * @returns Cards by season.
+ */
+export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsBySeasonInputType>) => {
+  try {
+    const { seasonId } = input;
+
+    // Get all cards by season
+    const cards = await ctx.prisma.card.findMany({
+      where: {
+        seasonId,
+      },
+    });
+
+    // Check if cards were found
+    if (!cards || cards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardsNotFoundBySeason,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        cards,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      const message = CommonError.InvalidInput;
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message,
+      });
+    }
+
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {

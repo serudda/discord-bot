@@ -3,7 +3,9 @@ import {
   createCardHandler,
   getAllCardsByRarityHandler,
   getAllCardsHandler,
+  getCardsBySeasonHandler,
   getCollectionHandler,
+  getRandomCardByRarityHandler,
   getRandomCardsHandler,
   giveCoinsHandler,
   setCoinsHandler,
@@ -13,7 +15,9 @@ import {
   createCardInput,
   getAllCardsByRarityInput,
   getAllCardsInput,
+  getCardsBySeasonInput,
   getCollectionInput,
+  getRandomCardByRarityInput,
   getRandomCardsInput,
   giveCoinsInput,
   setCoinsInput,
@@ -25,12 +29,18 @@ export const cardRouter = createTRPCRouter({
   getAllCards: publicProcedure
     .input(getAllCardsInput)
     .query(async ({ ctx, input }) => getAllCardsHandler({ ctx, input })),
+  getCardsBySeason: publicProcedure
+    .input(getCardsBySeasonInput)
+    .query(async ({ ctx, input }) => getCardsBySeasonHandler({ ctx, input })),
   getAllCardsByRarity: publicProcedure
     .input(getAllCardsByRarityInput)
     .query(async ({ ctx, input }) => getAllCardsByRarityHandler({ ctx, input })),
   getRandomCards: publicProcedure
     .input(getRandomCardsInput)
     .query(async ({ ctx, input }) => getRandomCardsHandler({ ctx, input })),
+  getRandomCardByRarity: publicProcedure
+    .input(getRandomCardByRarityInput)
+    .query(async ({ ctx, input }) => getRandomCardByRarityHandler({ ctx, input })),
   giveCoins: publicProcedure.input(giveCoinsInput).mutation(async ({ ctx, input }) => giveCoinsHandler({ ctx, input })),
   setCoins: publicProcedure.input(setCoinsInput).mutation(async ({ ctx, input }) => setCoinsHandler({ ctx, input })),
   createCard: publicProcedure
