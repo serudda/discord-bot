@@ -94,6 +94,7 @@ model User {
     subscription  Subscription?
     coins         Int           @default(0)
     userCards     UserCard[]
+    packs         Pack[]
     isActive      Boolean       @default(true) @map("is_active")
     createdAt     DateTime      @default(now()) @map("created_at")
     updatedAt     DateTime      @updatedAt @map("updated_at")
@@ -107,10 +108,37 @@ model Season {
     startDate DateTime @map("start_date")
     endDate   DateTime @map("end_date")
     cards     Card[]
+    packs     Pack[]
     createdAt DateTime @default(now()) @map("created_at")
     updatedAt DateTime @updatedAt @map("updated_at")
 
     @@map("seasons")
+}
+
+model Pack {
+    id        String     @id @default(cuid())
+    user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String     @map("user_id")
+    season    Season?    @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+    seasonId  String?    @map("season_id")
+    packCards PackCard[]
+    createdAt DateTime   @default(now()) @map("created_at")
+    updatedAt DateTime   @updatedAt @map("updated_at")
+
+    @@map("packs")
+}
+
+model PackCard {
+    id        String   @id @default(cuid())
+    pack      Pack     @relation(fields: [packId], references: [id], onDelete: Cascade)
+    packId    String   @map("pack_id")
+    card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+    cardId    String   @map("card_id")
+    isFoil    Boolean  @default(false) @map("is_foil")
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@map("pack_cards")
 }
 
 model Card {
@@ -121,6 +149,7 @@ model Card {
     image       String
     rarity      Rarity
     userCards   UserCard[]
+    packCards   PackCard[]
     season      Season?    @relation(fields: [seasonId], references: [id], onDelete: SetNull)
     seasonId    String?    @map("season_id")
     createdAt   DateTime   @default(now()) @map("created_at")
