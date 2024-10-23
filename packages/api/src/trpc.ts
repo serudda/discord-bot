@@ -11,6 +11,8 @@
  */
 
 import { prisma } from '@discord-bot/db';
+import { configService } from './services/configService';
+import type { inferAsyncReturnType} from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
@@ -24,6 +26,10 @@ import { ZodError } from 'zod';
  * These allow you to access things like the database, the
  * session, etc, when processing a request.
  */
+interface InnerContext {
+  prisma: typeof prisma;
+  configService: typeof configService;
+}
 
 /**
  * This helper generates the "internals" for a tRPC context.
@@ -36,11 +42,13 @@ import { ZodError } from 'zod';
  *
  * @see https://create.t3.gg/en/usage/trpc#-servertrpccontextts
  */
-const createInnerTRPCContext = () => {
+const createInnerTRPCContext: () => InnerContext = () => {
   return {
     prisma,
+    configService,
   };
 };
+type Context = inferAsyncReturnType<typeof createInnerTRPCContext>;
 
 /**
  * This is the actual context you'll use in your router. It
@@ -49,8 +57,9 @@ const createInnerTRPCContext = () => {
  *
  * @link https://trpc.io/docs/context
  */
-// eslint-disable-next-line @typescript-eslint/require-await
-export const createTRPCContext = async () => {
+ 
+export const createTRPCContext: () => Promise<Context> = async () => {
+  await configService.initialize();
   return createInnerTRPCContext();
 };
 
@@ -60,7 +69,7 @@ export const createTRPCContext = async () => {
  * This is where the trpc api is initialized, connecting the
  * context and transformer.
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {

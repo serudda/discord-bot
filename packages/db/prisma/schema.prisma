@@ -35,6 +35,17 @@ enum Rarity {
 // NOTE: When using postgresql, mysql or sqlserver, 
 // uncomment the @db.Text annotations below
 // @see https://next-auth.js.org/schemas/models
+
+model Config {
+    id        String   @id @default(cuid())
+    key       String   @unique
+    value     String
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+
+    @@map("config")
+}
+
 model Account {
     id                 String   @id @default(cuid())
     userId             String   @map("user_id")

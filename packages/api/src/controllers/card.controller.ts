@@ -299,9 +299,9 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
 export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) => {
   try {
     const { discordId } = input;
-    const PACK_PRICE = 100;
-    const CARD_AMOUNT_PACK = 3;
-    const FOIL_PROBABILITY = 0.04;
+    const PACK_PRICE = await ctx.configService.getGlobalConfig<number>('PACK_PRICE', 100);
+    const CARD_AMOUNT_PACK = await ctx.configService.getGlobalConfig<number>('CARD_AMOUNT_PACK', 3);
+    const FOIL_PROBABILITY = await ctx.configService.getGlobalConfig<number>('FOIL_PROBABILITY', 0.04);
 
     // Start transaction
     const result = await ctx.prisma.$transaction(async (prismaTransaction) => {

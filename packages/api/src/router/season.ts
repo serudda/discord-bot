@@ -12,7 +12,7 @@ import {
 } from '../schema/season.schema';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 
-export const cardRouter = createTRPCRouter({
+export const seasonRouter = createTRPCRouter({
   getAllSeasons: publicProcedure
     .input(getAllSeasonsInput)
     .query(async ({ ctx, input }) => getAllSeasonsHandler({ ctx, input })),
