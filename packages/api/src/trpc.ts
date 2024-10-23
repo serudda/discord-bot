@@ -12,7 +12,7 @@
 
 import { prisma } from '@discord-bot/db';
 import { configService } from './services/configService';
-import type { inferAsyncReturnType} from '@trpc/server';
+import type { inferAsyncReturnType } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
@@ -26,7 +26,7 @@ import { ZodError } from 'zod';
  * These allow you to access things like the database, the
  * session, etc, when processing a request.
  */
-interface InnerContext {
+export interface InnerContext {
   prisma: typeof prisma;
   configService: typeof configService;
 }
@@ -48,7 +48,7 @@ const createInnerTRPCContext: () => InnerContext = () => {
     configService,
   };
 };
-type Context = inferAsyncReturnType<typeof createInnerTRPCContext>;
+export type Context = inferAsyncReturnType<typeof createInnerTRPCContext>;
 
 /**
  * This is the actual context you'll use in your router. It
@@ -57,7 +57,7 @@ type Context = inferAsyncReturnType<typeof createInnerTRPCContext>;
  *
  * @link https://trpc.io/docs/context
  */
- 
+
 export const createTRPCContext: () => Promise<Context> = async () => {
   await configService.initialize();
   return createInnerTRPCContext();
