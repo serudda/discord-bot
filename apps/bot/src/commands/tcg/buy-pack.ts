@@ -1,7 +1,8 @@
 import type { Card, UserCard } from '@discord-bot/db';
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '../../api';
-import { mergeImages } from '../../utils';
+import { api, Response } from '~/api';
+import { BG_IMG_URL, FOIL_IMG_URL, RESULT_IMG_NAME } from '~/common';
+import { mergeImages } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
 import { AttachmentBuilder, SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -23,8 +24,6 @@ const command = {
 
       if (response?.result.status === Response.SUCCESS) {
         const { newUserCards } = response.result as { newUserCards: Array<UserCardWithCard> };
-        const bgImgUrl = 'https://i.imgur.com/4JJ2x0C.png';
-        const foilImgUrl = 'https://i.imgur.com/tTjHxdU.png';
 
         const imageUrls: Array<string> = [];
         const foilFlags: Array<boolean> = [];
@@ -35,10 +34,10 @@ const command = {
         });
 
         // Convert the image to buffer
-        const buffer = await mergeImages(imageUrls, foilFlags, foilImgUrl, bgImgUrl);
+        const buffer = await mergeImages(imageUrls, foilFlags, FOIL_IMG_URL, BG_IMG_URL);
 
         // Create a Discord attachment and send the image
-        const attachment = new AttachmentBuilder(buffer, { name: 'cards.png' });
+        const attachment = new AttachmentBuilder(buffer, { name: RESULT_IMG_NAME });
 
         await interaction.editReply({ files: [attachment] });
       }

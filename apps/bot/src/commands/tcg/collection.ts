@@ -1,7 +1,7 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api } from '../../api';
-import { collectionMsg } from '../../messages';
-import { formatMsg } from '../../utils';
+import { api } from '~/api';
+import { collectionMsg } from '~/messages';
+import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
