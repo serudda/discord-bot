@@ -55,7 +55,10 @@ export const CategorySection = ({
   userCollection,
   showUnownedCards,
 }: CategorySectionProps) => {
-  const categoryCriteria = useMemo(() => getCategoryCriteria(activeCategory, sortOrder), [activeCategory, sortOrder]);
+  const categoryCriteria = useMemo(
+    () => getCategoryCriteria(activeCategory, sortOrder, allCards),
+    [activeCategory, sortOrder, allCards],
+  );
 
   const { ownedCardMap, ownedCardIds } = useMemo(() => {
     const cardMap = new Map<string, CardCountMap>();
