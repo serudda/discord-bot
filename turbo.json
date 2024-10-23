@@ -43,10 +43,8 @@
   },
   "globalEnv": [
     "CI",
-    "API_URL",
     "PORT",
     "PREFIX",
-    "DATABASE_URL",
     "DISCORD_APPLICATION_ID",
     "DISCORD_SERVER_ID",
     "DISCORD_TOKEN",
@@ -54,6 +52,9 @@
     "SKIP_ENV_VALIDATION",
     "LEMON_SQUEEZY_URL",
     "LEMON_SQUEEZY_API_KEY",
-    "VERCEL_URL"
+    "API_URL",
+    "DATABASE_URL",
+    "VERCEL_URL",
+    "WEB_URL"
   ]
 }

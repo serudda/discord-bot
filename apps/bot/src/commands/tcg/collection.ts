@@ -34,7 +34,7 @@ const command = {
 
       const msg = formatMsg(collectionMsg.description, {
         discordId,
-        url: `https://tcg-cards.vercel.app/${response?.id}/collection/`,
+        url: `${process.env.WEB_URL}/${response?.id}/collection/`,
       });
       await interaction.editReply(msg);
     } catch (error) {
