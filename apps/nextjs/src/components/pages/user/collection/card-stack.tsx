@@ -34,7 +34,7 @@ export const CardStack = ({ card, isOwned, ownedCardMap }: CardStackProps) => {
   const stackedCardDuplicates = stackQuantity > 1 && isOwned ? Array(Math.min(stackQuantity - 1, 4)).fill(null) : [];
 
   const classes = {
-    container: cn('relative  ', {
+    container: cn('relative', {
       'hover:scale-105 transition-transform ease-elastic group duration-500 hover:z-50 cursor-pointer': isOwned,
       grayscale: !isOwned,
     }),
