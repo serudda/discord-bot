@@ -93,13 +93,13 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
     // Start transaction
     const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Get Sender user by Discord Id on Account table
-      const sender = await getUserByDiscordIdHandler({
+      const senderResponse = await getUserByDiscordIdHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
         input: { discordId: senderId },
       });
 
       // Check if sender exists
-      if (!sender) {
+      if (!senderResponse || !senderResponse.result || senderResponse.result.status === Response.ERROR) {
         return {
           result: {
             status: Response.ERROR,
@@ -109,7 +109,8 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       }
 
       // Check if sender has enough coins
-      if (sender.coins < amount) {
+      const sender = senderResponse.result.user;
+      if (!sender || sender.coins < amount) {
         return {
           result: {
             status: Response.ERROR,
@@ -119,13 +120,13 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       }
 
       // Get Recipient user by Discord Id on Account table
-      const recipient = await getUserByDiscordIdHandler({
+      const recipientResponse = await getUserByDiscordIdHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
         input: { discordId: recipientId },
       });
 
       // Check if recipient exists
-      if (!recipient) {
+      if (!recipientResponse || !recipientResponse.result || recipientResponse.result.status === Response.ERROR) {
         return {
           result: {
             status: Response.ERROR,
@@ -157,9 +158,10 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       }
 
       // Increase recipient's coins
+      const recipient = recipientResponse.result.user;
       const recepientUpdated = await prismaTransaction.user.update({
         where: {
-          id: recipient.id,
+          id: recipient?.id,
         },
         data: {
           coins: {
@@ -225,10 +227,10 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
     const { discordId, amount } = input;
 
     // Get user by Discord Id on Account table
-    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!user) {
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
       return {
         result: {
           status: Response.ERROR,
@@ -238,9 +240,10 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
     }
 
     // Increase user's coins
+    const user = userResponse.result.user;
     const userUpdated = await ctx.prisma.user.update({
       where: {
-        id: user.id,
+        id: user?.id,
       },
       data: {
         coins: amount,
@@ -306,27 +309,28 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
     // Start transaction
     const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Get user by Discord Id on Account table
-      const user = await getUserByDiscordIdHandler({
+      const userResponse = await getUserByDiscordIdHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
         input: { discordId },
       });
 
       // Check if user exists
-      if (!user) {
+      if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
         return {
           result: {
             status: Response.ERROR,
-            message: UserError.UserNotFound,
+            message: userResponse?.result.message,
           },
         };
       }
 
       // Check if user has enough coins
-      if (user.coins < PACK_PRICE) {
+      const user = userResponse.result.user;
+      if (!user || user.coins < PACK_PRICE) {
         return {
           result: {
             status: Response.ERROR,
-            message: CardError.NoCoinsToBuy,
+            message: UserError.NoCoins,
           },
         };
       }
@@ -340,11 +344,16 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if cards were selected
-      if (!randomCardsResponse || !randomCardsResponse.result || !randomCardsResponse.result.cards) {
+      if (
+        !randomCardsResponse ||
+        !randomCardsResponse.result ||
+        !randomCardsResponse.result.cards ||
+        randomCardsResponse.result.status === Response.ERROR
+      ) {
         return {
           result: {
             status: Response.ERROR,
-            message: CardError.RandomCardsNotFound,
+            message: randomCardsResponse?.result.message,
           },
         };
       }
@@ -642,6 +651,16 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
       randomCards.push(randomCardByRarity?.result.card);
     }
 
+    // Check if cards were selected
+    if (!randomCards || randomCards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.RandomCardsNotFound,
+        },
+      };
+    }
+
     return {
       result: {
         status: Response.SUCCESS,
@@ -754,22 +773,23 @@ export const getCollectionHandler = async ({ ctx, input }: Params<GetCollectionI
     const { discordId } = input;
 
     // Get user by Discord Id on Account table
-    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!user) {
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
       return {
         result: {
           status: Response.ERROR,
-          message: UserError.UserNotFound,
+          message: userResponse?.result.message,
         },
       };
     }
 
     // Get user's collection
+    const user = userResponse.result.user;
     const userCollection = await ctx.prisma.userCard.findMany({
       where: {
-        userId: user.id,
+        userId: user?.id,
       },
       include: {
         card: true,

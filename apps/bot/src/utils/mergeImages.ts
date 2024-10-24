@@ -1,3 +1,4 @@
+import { MIME_TYPE } from '../common/constants';
 import { Jimp } from 'jimp';
 
 /**
@@ -62,5 +63,5 @@ export const mergeImages = async (
   }
 
   // Convert the final image to buffer
-  return await finalImage.getBuffer('image/png');
+  return await finalImage.getBuffer(MIME_TYPE);
 };

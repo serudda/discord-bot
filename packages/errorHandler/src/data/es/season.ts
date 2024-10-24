@@ -4,6 +4,6 @@ export enum SeasonError {
 }
 
 export const SeasonErrors: Record<SeasonError, string> = {
-  [SeasonError.SeasonsNotFound]: 'No se encontramos ninguna temporada',
-  [SeasonError.SeasonNotFound]: 'No se encontramos la temporada que buscas',
+  [SeasonError.SeasonsNotFound]: 'No encontramos ninguna temporada',
+  [SeasonError.SeasonNotFound]: 'No encontramos la temporada que buscas',
 };

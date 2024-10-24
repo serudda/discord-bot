@@ -58,3 +58,27 @@ export const getUserCoinsInput = z.object({
 export type GetUserCoinsInputType = TypeOf<typeof getUserCoinsInput>;
 
 /*------------------------------------*/
+
+export const updateUserCoinsInput = z.object({
+  discordId: z.string(),
+  coins: z.number(),
+});
+export type UpdateUserCoinsInputType = TypeOf<typeof updateUserCoinsInput>;
+
+/*------------------------------------*/
+
+export const increaseUserCoinsInput = z.object({
+  discordId: z.string(),
+  coins: z.number(),
+});
+export type IncreaseUserCoinsInputType = TypeOf<typeof increaseUserCoinsInput>;
+
+/*------------------------------------*/
+
+export const decreaseUserCoinsInput = z.object({
+  discordId: z.string(),
+  coins: z.number(),
+});
+export type DecreaseUserCoinsInputType = TypeOf<typeof decreaseUserCoinsInput>;
+
+/*------------------------------------*/

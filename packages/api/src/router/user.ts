@@ -1,20 +1,26 @@
 import {
   createUserHandler,
+  decreaseUserCoinsHandler,
   getUserByDiscordIdHandler,
   getUserByEmailHandler,
   getUserByIdHandler,
   getUserByUsernameHandler,
   getUserCoinsHandler,
+  increaseUserCoinsHandler,
   registerUserHandler,
+  updateUserCoinsHandler,
 } from '../controllers/user.controller';
 import {
   createUserInput,
+  decreaseUserCoinsInput,
   getUserByDiscordIdInput,
   getUserByEmailInput,
   getUserByIdInput,
   getUserByUsernameInput,
   getUserCoinsInput,
+  increaseUserCoinsInput,
   registerUserInput,
+  updateUserCoinsInput,
 } from '../schema/user.schema';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 
@@ -42,4 +48,16 @@ export const userRouter = createTRPCRouter({
   getCoins: publicProcedure
     .input(getUserCoinsInput)
     .query(async ({ ctx, input }) => getUserCoinsHandler({ ctx, input })),
+
+  increaseCoins: publicProcedure
+    .input(increaseUserCoinsInput)
+    .mutation(async ({ ctx, input }) => increaseUserCoinsHandler({ ctx, input })),
+
+  decreaseCoins: publicProcedure
+    .input(decreaseUserCoinsInput)
+    .mutation(async ({ ctx, input }) => decreaseUserCoinsHandler({ ctx, input })),
+
+  updateCoins: publicProcedure
+    .input(updateUserCoinsInput)
+    .mutation(async ({ ctx, input }) => updateUserCoinsHandler({ ctx, input })),
 });

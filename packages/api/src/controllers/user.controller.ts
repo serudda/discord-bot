@@ -1,13 +1,16 @@
-import { AccountError, CardError, CommonError, UserError } from '@discord-bot/error-handler';
+import { AccountError, CommonError, UserError } from '@discord-bot/error-handler';
 import { PrismaErrorCode, Response, TRPCErrorCode, type Params } from '../common';
 import type {
   CreateUserInputType,
+  DecreaseUserCoinsInputType,
   GetUserByDiscordIdInputType,
   GetUserByEmailInputType,
   GetUserByIdInputType,
   GetUserByUsernameInputType,
   GetUserCoinsInputType,
+  IncreaseUserCoinsInputType,
   RegisterUserInputType,
+  UpdateUserCoinsInputType,
 } from '../schema/user.schema';
 import { createAccountHandler } from './account.controller';
 import { Prisma } from '@prisma/client';
@@ -37,19 +40,56 @@ export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInput
  * @returns User.
  */
 export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserByDiscordIdInputType>) => {
-  return ctx.prisma.user.findFirst({
-    where: {
-      accounts: {
-        some: {
-          providerAccountId: input.discordId,
-          provider: 'discord',
+  try {
+    const user = await ctx.prisma.user.findFirst({
+      where: {
+        accounts: {
+          some: {
+            providerAccountId: input.discordId,
+            provider: 'discord',
+          },
         },
       },
-    },
-    include: {
-      accounts: true,
-    },
-  });
+      include: {
+        accounts: true,
+      },
+    });
+
+    // Check if user exists
+    if (!user) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user,
+      },
+    };
+  } catch (error: unknown) {
+    // Prisma error (Database issue)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === PrismaErrorCode.UniqueConstraintViolation) {
+        throw new TRPCError({
+          code: TRPCErrorCode.CONFLICT,
+          message: 'getUserByDiscordId: user already exists',
+        });
+      }
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
 };
 
 /**
@@ -201,21 +241,11 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
     });
 
     // Check if user was created
-    if (!newUser || newUser.result.status === Response.ERROR) {
+    if (!newUser || !newUser.result.user || newUser.result.status === Response.ERROR) {
       return {
         result: {
           status: Response.ERROR,
-          message: UserError.UserNotCreated,
-        },
-      };
-    }
-
-    // TODO: Create a TypeGuard
-    if (!newUser?.result?.user?.id) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
+          message: newUser?.result.message,
         },
       };
     }
@@ -286,10 +316,10 @@ export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInp
     const { discordId } = input;
 
     // Get user
-    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!user) {
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
       return {
         result: {
           status: Response.ERROR,
@@ -299,11 +329,11 @@ export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInp
     }
 
     // Check if user has coins
-    if (!user.coins) {
+    if (!userResponse.result.user?.coins) {
       return {
         result: {
           status: Response.ERROR,
-          message: CardError.NoCoins,
+          message: UserError.NoCoins,
         },
       };
     }
@@ -311,7 +341,222 @@ export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInp
     return {
       result: {
         status: Response.SUCCESS,
-        coins: user.coins,
+        coins: userResponse.result.user?.coins,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Update user coins.
+ *
+ * @param ctx Ctx.
+ * @param input UpdateUserCoinsInputType.
+ * @returns User.
+ */
+export const updateUserCoinsHandler = async ({ ctx, input }: Params<UpdateUserCoinsInputType>) => {
+  try {
+    const { discordId, coins } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    // Update user coins
+    const user = userResponse.result.user;
+    const updatedUser = await ctx.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        coins,
+      },
+    });
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user: updatedUser,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Increase user coins.
+ *
+ * @param ctx Ctx.
+ * @param input IncreaseUserCoinsInputType.
+ * @returns User.
+ */
+export const increaseUserCoinsHandler = async ({ ctx, input }: Params<IncreaseUserCoinsInputType>) => {
+  try {
+    const { discordId, coins } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    // Increase user coins
+    const user = userResponse.result.user;
+    const updatedUser = await ctx.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        coins: {
+          increment: coins,
+        },
+      },
+    });
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user: updatedUser,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Decrease user coins.
+ *
+ * @param ctx Ctx.
+ * @param input DecreaseUserCoinsInputType.
+ * @returns User.
+ */
+export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUserCoinsInputType>) => {
+  try {
+    const { discordId, coins } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    // Decrease user coins
+    const user = userResponse.result.user;
+    const updatedUser = await ctx.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        coins: {
+          decrement: coins,
+        },
+      },
+    });
+
+    // Check if user coins were decreased
+    if (!updatedUser) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.NoDecreaseCoins,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user: updatedUser,
       },
     };
   } catch (error: unknown) {

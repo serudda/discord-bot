@@ -1,4 +1,6 @@
 export enum UserError {
+  NoCoins = 'NoCoins',
+  NoDecreaseCoins = 'NoDecreaseCoins',
   UnAuthorized = 'UnAuthorized',
   SenderNotFound = 'SenderNotFound',
   ReceiverNotFound = 'ReceiverNotFound',
@@ -8,6 +10,8 @@ export enum UserError {
 }
 
 export const UserErrors: Record<UserError, string> = {
+  [UserError.NoCoins]: 'No tienes suficientes monedas',
+  [UserError.NoDecreaseCoins]: 'No se pudieron restar las monedas al usuario',
   [UserError.UnAuthorized]: 'No estas autorizado para realizar esta acción',
   [UserError.SenderNotFound]: 'No logre encontrar tu usuario, verifica que coleccionas cartas',
   [UserError.ReceiverNotFound]: 'No logre encontrar al usuario receptor, verifica que colecciona cartas',
