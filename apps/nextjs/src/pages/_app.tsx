@@ -3,6 +3,7 @@ import { api } from '~/utils/api';
 import { type NextPage } from 'next';
 import { type AppProps } from 'next/app';
 
+import 'atropos/css';
 import '../styles/globals.css';
 
 export type NextPageWithLayout<P = Record<string, never>, IP = P> = NextPage<P, IP> & {
