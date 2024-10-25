@@ -74,10 +74,10 @@ export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserBy
   } catch (error: unknown) {
     // Prisma error (Database issue)
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === PrismaErrorCode.UniqueConstraintViolation) {
+      if (error.code === PrismaErrorCode.RecordDoesNotExist) {
         throw new TRPCError({
-          code: TRPCErrorCode.CONFLICT,
-          message: 'getUserByDiscordId: user already exists',
+          code: TRPCErrorCode.NOT_FOUND,
+          message: UserError.UserNotFound,
         });
       }
     }

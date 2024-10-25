@@ -1,5 +1,5 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api } from '~/api';
+import { api, Response } from '~/api';
 import { collectionMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
@@ -17,28 +17,35 @@ const command = {
       option.setName(Option.user).setDescription('Usuario del que deseas ver la colección de cartas'),
     ),
   execute: async (interaction: CommandInteraction) => {
-    // Check if user field is empty, if so, get the user that sent the command
-    const discordId = interaction.options.get(Option.user)?.user?.id ?? interaction.user.id;
-
     try {
       await interaction.deferReply();
 
       // Check if user exists
+      const discordId = interaction.options.get(Option.user)?.user?.id ?? interaction.user.id;
       if (!discordId) {
         await interaction.editReply(ErrorMessages.UserNotFound);
         return;
       }
 
       const response = await api.user.getByDiscordId.query({ discordId });
-      if (!response) await interaction.editReply(ErrorMessages.Unknown);
+      if (response?.result.status === Response.ERROR) {
+        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+        return;
+      }
 
+      const user = response?.result.user;
       const msg = formatMsg(collectionMsg.description, {
         discordId,
-        url: `${process.env.WEB_URL}/${response?.id}/collection/`,
+        url: `${process.env.WEB_URL}/${user?.id}/collection/`,
       });
       await interaction.editReply(msg);
     } catch (error) {
-      if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
+      console.error('Error executing collection command:', error);
+
+      if (error instanceof TRPCClientError) {
+        await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
+        return;
+      }
       await interaction.editReply(ErrorMessages.Unknown);
     }
   },
