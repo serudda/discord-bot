@@ -177,7 +177,7 @@ export const deleteUserSubscriptionHandler = async ({ ctx, input }: Params<Delet
     // Check if user exist
     // TODO: Tuve que quitar el user.subscription porque no existe en el tipo de dato de user
     const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!userResponse) {
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
       const message = 'deleteUserSubscription: user not found';
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
@@ -188,7 +188,7 @@ export const deleteUserSubscriptionHandler = async ({ ctx, input }: Params<Delet
     // Delete subscription
     const deletedSubscription = await ctx.prisma.subscription.delete({
       where: {
-        userId: userResponse.result.user.id,
+        userId: userResponse?.result.user?.id,
       },
     });
 

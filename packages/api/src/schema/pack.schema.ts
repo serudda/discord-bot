@@ -46,3 +46,10 @@ export const getAllPacksByUserIdInput = z.object({
 export type GetAllPacksByUserIdInputType = TypeOf<typeof getAllPacksByUserIdInput>;
 
 /*------------------------------------*/
+
+export const getAmountOfPacksByUserIdInput = z.object({
+  userId: z.string(),
+});
+export type GetAmountOfPacksByUserIdInputType = TypeOf<typeof getAmountOfPacksByUserIdInput>;
+
+/*------------------------------------*/

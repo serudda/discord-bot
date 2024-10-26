@@ -573,6 +573,17 @@ export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUs
       };
     }
 
+    // Check if user has enough coins
+    const userCoins = userResponse.result.user?.coins;
+    if (userCoins && userCoins < coins) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.NoDecreaseCoins,
+        },
+      };
+    }
+
     // Decrease user coins
     const user = userResponse.result.user;
     const updatedUser = await ctx.prisma.user.update({

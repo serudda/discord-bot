@@ -1,6 +1,7 @@
 import { accountRouter } from './router/account';
 import { cardRouter } from './router/card';
 import { configRouter } from './router/config';
+import { packRouter } from './router/pack';
 import { paymentRouter } from './router/payment';
 import { seasonRouter } from './router/season';
 import { subscriptionRouter } from './router/subscription';
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   card: cardRouter,
   config: configRouter,
   payment: paymentRouter,
+  pack: packRouter,
   season: seasonRouter,
   sub: subscriptionRouter,
   subscriptionPlan: subscriptionPlanRouter,

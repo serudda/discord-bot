@@ -94,7 +94,7 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
     return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Get Sender user by Discord Id on Account table
       const senderResponse = await getUserByDiscordIdHandler({
-        ctx: { prisma: prismaTransaction } as Ctx,
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: { discordId: senderId },
       });
 
@@ -121,7 +121,7 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
 
       // Get Recipient user by Discord Id on Account table
       const recipientResponse = await getUserByDiscordIdHandler({
-        ctx: { prisma: prismaTransaction } as Ctx,
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: { discordId: recipientId },
       });
 
@@ -308,7 +308,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
     return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Get user by Discord Id on Account table
       const userResponse = await getUserByDiscordIdHandler({
-        ctx: { prisma: prismaTransaction } as Ctx,
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: { discordId },
       });
 
@@ -335,7 +335,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
 
       // Get random cards
       const randomCardsResponse = await getRandomCardsHandler({
-        ctx: { prisma: prismaTransaction } as Ctx,
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: {
           amount: CARD_AMOUNT_PACK,
         },
@@ -378,7 +378,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
 
           // Add user card
           const newAddedCard = await addCardToCollectionHandler({
-            ctx: { prisma: prismaTransaction } as Ctx,
+            ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
             input: {
               userId: user.id,
               cardId: card.id,

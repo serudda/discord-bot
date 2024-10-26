@@ -1,7 +1,7 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '../../api';
-import { walletMsg } from '../../messages';
-import { formatMsg } from '../../utils';
+import { api, Response } from '~/api';
+import { walletMsg } from '~/messages';
+import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -26,17 +26,34 @@ const command = {
         return;
       }
 
-      if (response?.result && response.result.coins) {
-        const msg = formatMsg(walletMsg.description, {
-          userId: discordId,
-          coins: response.result.coins,
-        });
-        await interaction.editReply(msg);
-      } else {
+      // Check if user has coins
+      if (!response?.result || !response.result.coins) {
         await interaction.editReply(ErrorMessages.NoCoins);
+        return;
       }
+
+      const msg = formatMsg(walletMsg.description, {
+        userId: discordId,
+        coins: response.result.coins,
+      });
+      await interaction.editReply(msg);
     } catch (error) {
-      if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
+      console.error('Error getting wallet:', error);
+
+      if (error instanceof TRPCClientError) {
+        if (error.message.includes('ECONNREFUSED')) {
+          await interaction.editReply(
+            'El servidor no está disponible en este momento. Por favor, inténtalo más tarde.',
+          );
+          return;
+        }
+
+        // Other tRPC errors
+        await interaction.editReply(error.message);
+        return;
+      }
+
+      // Unknown error
       await interaction.editReply(ErrorMessages.Unknown);
     }
   },
