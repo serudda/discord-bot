@@ -1,5 +1,7 @@
 import { ErrorMessages, UserError, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '../../api';
+import { startGameMsg } from '../../messages';
+import { formatMsg } from '../../utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -37,7 +39,10 @@ const command = {
       }
 
       if (response?.result && response.result.coins) {
-        const msg = `¡Bienvenido ${response.result.name},\n ya puedes empezar a coleccionar cartas! Has recibido ${response.result.coins} monedas de regalo.\n Puedes usar el comando \`/buy-pack\` para comprar sobres de cartas.`;
+        const coins = response?.result.coins;
+        const msg = formatMsg(startGameMsg.description, {
+          coins,
+        });
         await interaction.editReply(msg);
       } else {
         await interaction.editReply(ErrorMessages.Unknown);

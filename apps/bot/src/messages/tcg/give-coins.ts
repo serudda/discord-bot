@@ -7,7 +7,6 @@ export const giveCoinsMsg: Message = {
       ============================================
       
       ¡<@{senderId}> ha dado **{coins}** monedas a <@{recipientId}>!
-      Nuevo balance es: **{balance}** monedas.
       
       ============================================
     `,

@@ -49,6 +49,7 @@ const command = {
     } catch (error) {
       if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
       await interaction.editReply(ErrorMessages.Unknown);
+      return;
     }
   },
 };

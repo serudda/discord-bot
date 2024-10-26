@@ -91,7 +91,7 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
     const { senderId, recipientId, amount } = input;
 
     // Start transaction
-    const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Get Sender user by Discord Id on Account table
       const senderResponse = await getUserByDiscordIdHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
@@ -187,8 +187,6 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
         },
       };
     });
-
-    return result;
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
@@ -307,7 +305,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
     const FOIL_PROBABILITY = await ctx.configService.getGlobalConfig<number>('FOIL_PROBABILITY', 0.04);
 
     // Start transaction
-    const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Get user by Discord Id on Account table
       const userResponse = await getUserByDiscordIdHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
@@ -430,8 +428,6 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         },
       };
     });
-
-    return result;
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {

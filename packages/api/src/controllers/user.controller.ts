@@ -1,5 +1,5 @@
 import { AccountError, CommonError, UserError } from '@discord-bot/error-handler';
-import { PrismaErrorCode, Response, TRPCErrorCode, type Params } from '../common';
+import { PrismaErrorCode, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
   CreateUserInputType,
   DecreaseUserCoinsInputType,
@@ -214,70 +214,75 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
 export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInputType>) => {
   try {
     const { discordId, email, name, username, image } = input;
-    const DEFAULT_COINS = 500;
+    const INIT_COINS = await ctx.configService.getGlobalConfig<number>('INIT_COINS', 500);
 
-    // Check if user already exists
-    const user = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
+      // Check if user already exists
+      const user = await getUserByDiscordIdHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { discordId },
+      });
 
-    if (user) {
+      if (user) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: UserError.UserAlreadyExists,
+          },
+        };
+      }
+
+      // Create user
+      const newUser = await createUserHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: {
+          name,
+          username,
+          email,
+          image,
+          coins: INIT_COINS,
+        },
+      });
+
+      // Check if user was created
+      if (!newUser || !newUser.result.user || newUser.result.status === Response.ERROR) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: newUser?.result.message,
+          },
+        };
+      }
+
+      // Create account
+      const newAccount = await createAccountHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: {
+          type: 'discord',
+          provider: 'discord',
+          providerAccountId: discordId,
+          userId: newUser.result.user.id,
+        },
+      });
+
+      // Check if account was created
+      if (!newAccount || newAccount.result.status === Response.ERROR) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: AccountError.AccountNotCreated,
+          },
+        };
+      }
+
       return {
         result: {
-          status: Response.ERROR,
-          message: UserError.UserAlreadyExists,
+          status: Response.SUCCESS,
+          name: newUser?.result?.user?.name,
+          coins: newUser?.result?.user?.coins,
         },
       };
-    }
-
-    // Create user
-    const newUser = await createUserHandler({
-      ctx,
-      input: {
-        name,
-        username,
-        email,
-        image,
-        coins: DEFAULT_COINS,
-      },
     });
-
-    // Check if user was created
-    if (!newUser || !newUser.result.user || newUser.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: newUser?.result.message,
-        },
-      };
-    }
-
-    // Create account
-    const newAccount = await createAccountHandler({
-      ctx,
-      input: {
-        type: 'discord',
-        provider: 'discord',
-        providerAccountId: discordId,
-        userId: newUser.result.user.id,
-      },
-    });
-
-    // Check if account was created
-    if (!newAccount || newAccount.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: AccountError.AccountNotCreated,
-        },
-      };
-    }
-
-    return {
-      result: {
-        status: Response.SUCCESS,
-        name: newUser?.result?.user?.name,
-        coins: newUser?.result?.user?.coins,
-      },
-    };
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {

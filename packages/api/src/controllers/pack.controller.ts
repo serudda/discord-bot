@@ -282,7 +282,7 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
     const { seasonId, userId } = input;
     const CARD_AMOUNT_PACK = await ctx.configService.getGlobalConfig<number>('CARD_AMOUNT_PACK', 3);
 
-    const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Create pack
       const newPackResponse = await createPackHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
@@ -348,8 +348,6 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
         },
       };
     });
-
-    return result;
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
@@ -390,7 +388,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
     const { discordId } = input;
     const PACK_PRICE = await ctx.configService.getGlobalConfig<number>('PACK_PRICE', 100);
 
-    const result = await ctx.prisma.$transaction(async (prismaTransaction) => {
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Get user by Discord ID
       const userResponse = await getUserByDiscordIdHandler({
         ctx: { prisma: prismaTransaction } as Ctx,
@@ -474,8 +472,6 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         },
       };
     });
-
-    return result;
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
