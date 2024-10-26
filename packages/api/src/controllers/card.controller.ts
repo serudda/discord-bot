@@ -13,7 +13,7 @@ import type {
   GiveCoinsInputType,
   SetCoinsInputType,
 } from '../schema/card.schema';
-import { getUserByDiscordIdHandler } from './user.controller';
+import { getUserByDiscordIdHandler, getUserByIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
@@ -766,12 +766,10 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
  */
 export const getCollectionHandler = async ({ ctx, input }: Params<GetCollectionInputType>) => {
   try {
-    const { discordId } = input;
-
-    // Get user by Discord Id on Account table
-    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    const { userId } = input;
 
     // Check if user exists
+    const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
     if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
       return {
         result: {

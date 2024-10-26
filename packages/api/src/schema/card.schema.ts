@@ -71,7 +71,7 @@ export type CreateCardInputType = TypeOf<typeof createCardInput>;
 /*------------------------------------*/
 
 export const getCollectionInput = z.object({
-  discordId: z.string(),
+  userId: z.string(),
 });
 export type GetCollectionInputType = TypeOf<typeof getCollectionInput>;
 

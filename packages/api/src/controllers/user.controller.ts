@@ -35,10 +35,12 @@ export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInput
 
     // Check if user exists
     if (!user) {
-      throw new TRPCError({
-        code: TRPCErrorCode.NOT_FOUND,
-        message: UserError.UserNotFound,
-      });
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
     }
 
     return {
