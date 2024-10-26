@@ -25,6 +25,13 @@ export type BuyPackInputType = TypeOf<typeof buyPackInput>;
 
 /*------------------------------------*/
 
+export const openPackInput = z.object({
+  userId: z.string(),
+});
+export type OpenPackInputType = TypeOf<typeof openPackInput>;
+
+/*------------------------------------*/
+
 export const getPackByIdInput = z.object({
   packId: z.string(),
 });
@@ -51,5 +58,12 @@ export const getAmountOfPacksByUserIdInput = z.object({
   userId: z.string(),
 });
 export type GetAmountOfPacksByUserIdInputType = TypeOf<typeof getAmountOfPacksByUserIdInput>;
+
+/*------------------------------------*/
+
+export const deletePackInput = z.object({
+  packId: z.string(),
+});
+export type DeletePackInputType = TypeOf<typeof deletePackInput>;
 
 /*------------------------------------*/

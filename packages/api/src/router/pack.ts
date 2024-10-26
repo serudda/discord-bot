@@ -2,19 +2,23 @@ import {
   buyPackHandler,
   createPackHandler,
   createPackWithCardsHandler,
+  deletePackHandler,
   getAllPacksByUserIdHandler,
   getAmountOfPacksByUserIdHandler,
   getPackByIdHandler,
   getUserPackByIdHandler,
+  openPackHandler,
 } from '../controllers/pack.controller';
 import {
   buyPackInput,
   createPackInput,
   createPackWithCardsInput,
+  deletePackInput,
   getAllPacksByUserIdInput,
   getAmountOfPacksByUserIdInput,
   getPackByIdInput,
   getUserPackByIdInput,
+  openPackInput,
 } from '../schema/pack.schema';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 
@@ -38,4 +42,8 @@ export const packRouter = createTRPCRouter({
     .input(createPackWithCardsInput)
     .mutation(async ({ ctx, input }) => createPackWithCardsHandler({ ctx, input })),
   buyPack: publicProcedure.input(buyPackInput).mutation(async ({ ctx, input }) => buyPackHandler({ ctx, input })),
+  openPack: publicProcedure.input(openPackInput).mutation(async ({ ctx, input }) => openPackHandler({ ctx, input })),
+  deletePack: publicProcedure
+    .input(deletePackInput)
+    .mutation(async ({ ctx, input }) => deletePackHandler({ ctx, input })),
 });

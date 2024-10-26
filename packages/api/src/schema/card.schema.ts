@@ -22,6 +22,13 @@ export type GetCardsBySeasonInputType = TypeOf<typeof getCardsBySeasonInput>;
 
 /*------------------------------------*/
 
+export const getCardsByPackIdInput = z.object({
+  packId: z.string(),
+});
+export type GetCardsByPackIdInputType = TypeOf<typeof getCardsByPackIdInput>;
+
+/*------------------------------------*/
+
 export const getAllCardsByRarityInput = z.object({
   rarity: z.nativeEnum(Rarity),
 });

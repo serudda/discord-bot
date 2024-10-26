@@ -6,6 +6,7 @@ import type {
   CreateCardInputType,
   GetAllCardsByRarityInputType,
   GetAllCardsInputType,
+  GetCardsByPackIdInputType,
   GetCardsBySeasonInputType,
   GetCollectionInputType,
   GetRandomCardByRarityInputType,
@@ -555,6 +556,63 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
         });
       }
 
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get cards by pack ID.
+ *
+ * @param ctx Ctx.
+ * @param input GetCardsByPackIdInputType.
+ * @returns Cards by pack ID.
+ */
+export const getCardsByPackIdHandler = async ({ ctx, input }: Params<GetCardsByPackIdInputType>) => {
+  try {
+    const { packId } = input;
+
+    // Get cards by pack ID
+    const cards = await ctx.prisma.packCard.findMany({
+      where: {
+        packId,
+      },
+      include: {
+        card: true,
+      },
+    });
+
+    // Check if cards were found
+    if (!cards || cards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardsNotFoundByPackId,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        cards,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      const message = CommonError.InvalidInput;
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
         message: error.message,

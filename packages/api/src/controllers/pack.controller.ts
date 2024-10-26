@@ -1,16 +1,18 @@
 import type { Card } from '@discord-bot/db';
-import { CommonError, PackError, UserError } from '@discord-bot/error-handler';
+import { CardError, CommonError, PackError, UserError } from '@discord-bot/error-handler';
 import { Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
   BuyPackInputType,
   CreatePackInputType,
   CreatePackWithCardsInputType,
+  DeletePackInputType,
   GetAllPacksByUserIdInputType,
   GetAmountOfPacksByUserIdInputType,
   GetPackByIdInputType,
   GetUserPackByIdInputType,
+  OpenPackInputType,
 } from '../schema/pack.schema';
-import { getRandomCardsHandler } from './card.controller';
+import { addCardToCollectionHandler, getCardsByPackIdHandler, getRandomCardsHandler } from './card.controller';
 import { getCurrentSeasonHandler } from './season.controller';
 import { decreaseUserCoinsHandler, getUserByDiscordIdHandler, getUserByIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';
@@ -140,6 +142,13 @@ export const getAllPacksByUserIdHandler = async ({ ctx, input }: Params<GetAllPa
   }
 };
 
+/**
+ * Get amount of packs by user ID.
+ *
+ * @param ctx Ctx.
+ * @param input GetAmountOfPacksByUserIdInputType.
+ * @returns Amount of user's packs.
+ */
 export const getAmountOfPacksByUserIdHandler = async ({ ctx, input }: Params<GetAmountOfPacksByUserIdInputType>) => {
   try {
     const { userId } = input;
@@ -338,6 +347,7 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
   try {
     const { seasonId, userId } = input;
     const CARD_AMOUNT_PACK = await ctx.configService.getGlobalConfig<number>('CARD_AMOUNT_PACK', 3);
+    const FOIL_PROBABILITY = await ctx.configService.getGlobalConfig<number>('FOIL_PROBABILITY', 0.04);
 
     const executePackCreation = async (prisma: typeof ctx.prisma) => {
       // Create pack
@@ -380,6 +390,7 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
       const cardsInPack = cards.map((card) => ({
         packId,
         cardId: card.id,
+        isFoil: Math.random() < FOIL_PROBABILITY,
       }));
 
       // Create cards in pack
@@ -484,8 +495,6 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         };
       }
 
-      console.log('**USER**', user);
-
       // Get current season
       const seasonResponse = await getCurrentSeasonHandler({
         ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
@@ -577,6 +586,209 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
         message,
+      });
+    }
+  }
+};
+
+/**
+ * Open pack.
+ *
+ * @param ctx Ctx.
+ * @param input OpenPackInputType.
+ * @returns Pack.
+ */
+export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>) => {
+  const { userId } = input;
+
+  try {
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
+      // Get random pack
+      const randomPackResponse = await prismaTransaction.pack.findFirst({
+        where: {
+          userId,
+        },
+      });
+
+      // Check if pack was found
+      if (!randomPackResponse) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: PackError.NoUserPack,
+          },
+        };
+      }
+
+      // Get cards by pack ID
+      const cardsByPackIdResponse = await getCardsByPackIdHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { packId: randomPackResponse.id },
+      });
+
+      // Check if cards were found
+      if (
+        !cardsByPackIdResponse ||
+        !cardsByPackIdResponse.result ||
+        cardsByPackIdResponse.result.status === Response.ERROR
+      ) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: cardsByPackIdResponse?.result.message,
+          },
+        };
+      }
+
+      // Delete pack
+      const deletePackResponse = await deletePackHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { packId: randomPackResponse.id },
+      });
+
+      // Check if pack was deleted
+      if (!deletePackResponse || !deletePackResponse.result || deletePackResponse.result.status === Response.ERROR) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: PackError.NoDeletePack,
+          },
+        };
+      }
+
+      // Add cards to user's collection
+      const randomCards = cardsByPackIdResponse?.result.cards?.map((packCard) => {
+        return {
+          ...packCard.card,
+          isFoil: packCard.isFoil,
+        };
+      });
+
+      // Check if random cards were found
+      if (!randomCards) {
+        return {
+          status: Response.ERROR,
+          message: CardError.CardsNotFound,
+        };
+      }
+
+      const newUserCards = await Promise.all(
+        randomCards.map(async (card) => {
+          if (!card) return;
+
+          // Add user card
+          const newAddedCard = await addCardToCollectionHandler({
+            ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+            input: {
+              userId,
+              cardId: card.id,
+              quantity: 1,
+              isFoil: card.isFoil,
+            },
+          });
+
+          // Check if card was added to user's collection
+          if (!newAddedCard || newAddedCard.result.status === Response.ERROR) {
+            return {
+              status: Response.ERROR,
+              message: CardError.NoAddCardToUserCollection,
+            };
+          }
+          return newAddedCard.result.userCard;
+        }),
+      );
+
+      // Check if cards were added to user's collection
+      if (!newUserCards) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.NoAddCardToUserCollection,
+          },
+        };
+      }
+
+      // Return random cards
+      return {
+        result: {
+          status: Response.SUCCESS,
+          newUserCards,
+        },
+      };
+    });
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      const message = CommonError.InvalidInput;
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Delete pack.
+ *
+ * @param ctx Ctx.
+ * @param input DeletePackInputType.
+ * @returns Pack.
+ */
+export const deletePackHandler = async ({ ctx, input }: Params<DeletePackInputType>) => {
+  try {
+    const { packId } = input;
+
+    // Delete pack
+    const deletedPack = await ctx.prisma.pack.delete({
+      where: {
+        id: packId,
+      },
+    });
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        pack: deletedPack,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      const message = CommonError.InvalidInput;
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
       });
     }
   }
