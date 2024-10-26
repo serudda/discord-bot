@@ -250,7 +250,6 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
 export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInputType>) => {
   try {
     const { discordId, email, name, username, image } = input;
-    console.log('registerUserHandler', input);
     const INIT_COINS = await ctx.configService.getGlobalConfig<number>('INIT_COINS', 500);
 
     return await ctx.prisma.$transaction(async (prismaTransaction) => {
@@ -260,9 +259,7 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
         input: { discordId },
       });
 
-      console.log('user', user);
-
-      if (user) {
+      if (user?.result && user.result.status === Response.SUCCESS) {
         return {
           result: {
             status: Response.ERROR,
@@ -282,8 +279,6 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
           coins: INIT_COINS,
         },
       });
-
-      console.log('newUser', newUser);
 
       // Check if user was created
       if (!newUser || !newUser.result.user || newUser.result.status === Response.ERROR) {

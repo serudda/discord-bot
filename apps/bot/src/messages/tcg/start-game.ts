@@ -8,13 +8,13 @@ export const startGameMsg: Message = {
 
       **Bienvenido al juego**
       ¡Ya puedes empezar a coleccionar cartas!
-      Te hemos dado **<{coins}>** monedas de regalo.
+      Te hemos dado **{coins}** monedas de regalo.
 
       Estos son los comandos que puedes usar:
-      \`/buy-pack\` para comprar sobres de cartas.
-      \`/wallet\` para ver tu balance de monedas.
-      \`/collection\` para ver tu colección.
-      \`/give-coins\` para dar monedas a otro usuario.
+      - \`/buy-pack\` para comprar sobres de cartas.
+      - \`/wallet\` para ver tu balance de monedas.
+      - \`/collection\` para ver tu colección.
+      - \`/give-coins\` para dar monedas a otro usuario.
 
       ============================================
     `,
