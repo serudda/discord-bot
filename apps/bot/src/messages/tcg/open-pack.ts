@@ -8,7 +8,7 @@ export const openPackMsg: Message = {
       
       ***<@{discordId}> acaba de abrir un sobre***
       Le quedan **{packs}** sobres sin abrir.
-      Ver colección: {url}
+      Ver su colección: {url}
       
       ============================================
     `,
