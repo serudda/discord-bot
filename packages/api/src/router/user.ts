@@ -29,15 +29,15 @@ export const userRouter = createTRPCRouter({
 
   getByDiscordId: publicProcedure
     .input(getUserByDiscordIdInput)
-    .query(({ ctx, input }) => getUserByDiscordIdHandler({ ctx, input })),
+    .query(async ({ ctx, input }) => getUserByDiscordIdHandler({ ctx, input })),
 
   getByEmail: publicProcedure
     .input(getUserByEmailInput)
-    .query(({ ctx, input }) => getUserByEmailHandler({ ctx, input })),
+    .query(async ({ ctx, input }) => getUserByEmailHandler({ ctx, input })),
 
   getUserByUsername: publicProcedure
     .input(getUserByUsernameInput)
-    .query(({ ctx, input }) => getUserByUsernameHandler({ ctx, input })),
+    .query(async ({ ctx, input }) => getUserByUsernameHandler({ ctx, input })),
 
   create: publicProcedure.input(createUserInput).mutation(async ({ ctx, input }) => createUserHandler({ ctx, input })),
 

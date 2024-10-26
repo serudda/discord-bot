@@ -24,13 +24,49 @@ import { z } from 'zod';
  * @param input GetUserByIdInputType.
  * @returns User.
  */
-export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInputType>) =>
-  ctx.prisma.user.findUnique({
-    where: { id: input.id },
-    include: {
-      accounts: true,
-    },
-  });
+export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInputType>) => {
+  try {
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: input.id },
+      include: {
+        accounts: true,
+      },
+    });
+
+    // Check if user exists
+    if (!user) {
+      throw new TRPCError({
+        code: TRPCErrorCode.NOT_FOUND,
+        message: UserError.UserNotFound,
+      });
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user,
+      },
+    };
+  } catch (error: unknown) {
+    // Prisma error (Database issue)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === PrismaErrorCode.RecordDoesNotExist) {
+        throw new TRPCError({
+          code: TRPCErrorCode.NOT_FOUND,
+          message: UserError.UserNotFound,
+        });
+      }
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
 
 /**
  * Get user by Discord Id.
@@ -214,6 +250,7 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
 export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInputType>) => {
   try {
     const { discordId, email, name, username, image } = input;
+    console.log('registerUserHandler', input);
     const INIT_COINS = await ctx.configService.getGlobalConfig<number>('INIT_COINS', 500);
 
     return await ctx.prisma.$transaction(async (prismaTransaction) => {
@@ -222,6 +259,8 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
         ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: { discordId },
       });
+
+      console.log('user', user);
 
       if (user) {
         return {
@@ -243,6 +282,8 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
           coins: INIT_COINS,
         },
       });
+
+      console.log('newUser', newUser);
 
       // Check if user was created
       if (!newUser || !newUser.result.user || newUser.result.status === Response.ERROR) {

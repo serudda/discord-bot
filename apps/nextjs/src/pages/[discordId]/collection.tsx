@@ -8,7 +8,9 @@ const UserCollectionPage = () => {
   const router = useRouter();
   const { discordId } = router.query;
   const { data: userData } = api.user.getById.useQuery({ id: discordId as string });
-  const userDiscordId = userData?.accounts.find((account) => account.provider === 'discord')?.providerAccountId;
+  const userDiscordId = userData?.result.user.accounts.find(
+    (account) => account.provider === 'discord',
+  )?.providerAccountId;
   const { data: collectionData } = api.card.getCollection.useQuery({ discordId: userDiscordId as string });
   const { data: allCardsData } = api.card.getAllCards.useQuery({});
 
@@ -28,7 +30,7 @@ const UserCollectionPage = () => {
     <main className="bg-neutral-900 min-h-dvh">
       <div className="container mx-auto grid-cols-[0.3fr,1fr] grid">
         <UserSidebar
-          userImage={userData?.image as string}
+          userImage={userData?.result.user.image as string}
           userCollection={userCollection}
           showUnownedCards={showUnownedCards}
           setShowUnownedCards={setShowUnownedCards}

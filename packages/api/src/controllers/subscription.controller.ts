@@ -38,8 +38,8 @@ export const addUserSubscriptionHandler = async ({ ctx, input }: Params<AddUserS
     const { userId, subscriptionPlanId, frequency, startsAt, endsAt, renewsAt } = input;
 
     // Check if user exist
-    const user = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!user) {
+    const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
+    if (!userResponse) {
       const message = 'addUserSubscription: user not found';
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
@@ -48,7 +48,8 @@ export const addUserSubscriptionHandler = async ({ ctx, input }: Params<AddUserS
     }
 
     // Check if user already has a subscription
-    if (user.subscription !== null) {
+    // TODO: Tuve que quitar el user.subscription porque no existe en el tipo de dato de user
+    if (userResponse.result.user !== null) {
       const message = 'addUserSubscription: user already has a subscription';
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
@@ -98,8 +99,8 @@ export const updateUserSubscriptionHandler = async ({ ctx, input }: Params<Updat
     const { userId, subscriptionPlanId, frequency, startsAt, endsAt, renewsAt, isActive } = input;
 
     // Check if user exist
-    const user = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!user) {
+    const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
+    if (!userResponse) {
       const message = 'updateUserSubscription: user not found';
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
@@ -108,7 +109,8 @@ export const updateUserSubscriptionHandler = async ({ ctx, input }: Params<Updat
     }
 
     // Check if user already has a subscription
-    if (!user.subscription) {
+    // TODO: Tuve que quitar el user.subscription porque no existe en el tipo de dato de user
+    if (!userResponse.result.user) {
       const message = 'updateUserSubscription: user has no subscription';
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
@@ -119,7 +121,7 @@ export const updateUserSubscriptionHandler = async ({ ctx, input }: Params<Updat
     // Update subscription
     const subscription = await ctx.prisma.subscription.update({
       where: {
-        userId: user.id,
+        userId: userResponse.result.user.id,
       },
       data: {
         subscriptionPlan: {
@@ -173,8 +175,9 @@ export const deleteUserSubscriptionHandler = async ({ ctx, input }: Params<Delet
     const { userId } = input;
 
     // Check if user exist
-    const user = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!user) {
+    // TODO: Tuve que quitar el user.subscription porque no existe en el tipo de dato de user
+    const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
+    if (!userResponse) {
       const message = 'deleteUserSubscription: user not found';
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
@@ -185,7 +188,7 @@ export const deleteUserSubscriptionHandler = async ({ ctx, input }: Params<Delet
     // Delete subscription
     const deletedSubscription = await ctx.prisma.subscription.delete({
       where: {
-        userId: user.id,
+        userId: userResponse.result.user.id,
       },
     });
 
