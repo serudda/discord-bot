@@ -25,7 +25,8 @@ const command = {
         return;
       }
 
-      const openPackResponse = await api.pack.openPack.mutate({ userId: userResponse?.result.user?.id as string });
+      const userId = userResponse?.result.user?.id as string;
+      const openPackResponse = await api.pack.openPack.mutate({ userId });
 
       if (openPackResponse?.result?.status === Response.ERROR) {
         await interaction.editReply(ErrorMessages[openPackResponse.result.message as ErrorCode]);
@@ -51,6 +52,7 @@ const command = {
       const msg = formatMsg(openPackMsg.description, {
         discordId,
         packs,
+        url: `${process.env.WEB_URL}/${userId}/collection/`,
       });
       await interaction.editReply({ files: [attachment], content: msg });
     } catch (error) {
