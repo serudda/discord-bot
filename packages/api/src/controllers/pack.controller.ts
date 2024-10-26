@@ -553,8 +553,6 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         input: { userId },
       });
 
-      console.log('**AMOUNT OF PACKS RESPONSE**', amountOfPacksResponse);
-
       // Check if amount of packs was found
       if (
         !amountOfPacksResponse ||
@@ -708,11 +706,32 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
         };
       }
 
+      // Get amount of packs by user ID
+      const amountOfPacksResponse = await getAmountOfPacksByUserIdHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { userId },
+      });
+
+      // Check if amount of packs was found
+      if (
+        !amountOfPacksResponse ||
+        !amountOfPacksResponse.result ||
+        amountOfPacksResponse.result.status === Response.ERROR
+      ) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: amountOfPacksResponse?.result.message,
+          },
+        };
+      }
+
       // Return random cards
       return {
         result: {
           status: Response.SUCCESS,
           newUserCards,
+          amountOfPacks: amountOfPacksResponse.result.amountOfPacks,
         },
       };
     });

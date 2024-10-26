@@ -9,7 +9,7 @@ export enum PackError {
 }
 export const PackErrors: Record<PackError, string> = {
   [PackError.NoCreatePack]: 'No se pudo crear el paquete',
-  [PackError.NoUserPack]: 'No tienes paquetes, compra uno con tus monedas virtuales',
+  [PackError.NoUserPack]: 'No tienes paquetes para abrir, compra uno con tus monedas virtuales',
   [PackError.NoCreatePackCards]: 'No se pudieron añadir las cartas al paquete',
   [PackError.PackNotFound]: 'No encontramos el paquete que buscas',
   [PackError.UserPackNotFound]: 'No encontramos el paquete del usuario que buscas',
