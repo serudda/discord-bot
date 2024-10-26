@@ -6,9 +6,9 @@ export const buyPackMsg: Message = {
   description: dedent`
       ============================================
       
-      Has comprado un sobre de 3 cartas.
-      - Tienes **{packs}** sobres sin abrir.
-      - Tu nuevo saldo es de **{coins}** monedas.
+      ***🎉 ¡<@{discordId}> ha comprado un sobre de cartas! 🎉***
+
+      - Tiene **{packs}** sobres sin abrir.
 
       Para abrir un sobre, usa el comando \`/open-pack\`.
       

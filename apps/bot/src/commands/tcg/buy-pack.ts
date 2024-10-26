@@ -10,8 +10,6 @@ const command = {
   execute: async (interaction: CommandInteraction) => {
     const discordId = interaction.user.id;
 
-    console.log('**DISCORD ID**', discordId);
-
     try {
       await interaction.deferReply();
       const response = await api.pack.buyPack.mutate({ discordId });
@@ -22,9 +20,8 @@ const command = {
       }
 
       const packs = response?.result.amountOfPacks as number;
-      const coins = response?.result.coins as number;
       const msg = formatMsg(buyPackMsg.description, {
-        coins,
+        discordId,
         packs,
       });
       await interaction.editReply(msg);
