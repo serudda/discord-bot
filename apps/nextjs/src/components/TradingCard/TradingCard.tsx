@@ -1,3 +1,4 @@
+import { BACK_IMG_URL } from '~/common';
 import { cn } from '~/utils';
 
 export interface TradingCardProps {
@@ -25,15 +26,29 @@ export interface TradingCardProps {
    * Whether the card is a foil.
    */
   isFoil?: boolean;
+
+  /**
+   * Whether the card is a back.
+   */
+  isBack?: boolean;
 }
 
-export const TradingCard = ({ className, imgName, imgUrl, amount = 1, isFoil = false }: TradingCardProps) => {
+export const TradingCard = ({
+  className,
+  imgName,
+  imgUrl,
+  amount = 1,
+  isFoil = false,
+  isBack = false,
+}: TradingCardProps) => {
   const classes = {
     container: cn(
       'w-full relative',
       'rounded-lg',
       'transition-transform ease-elastic group duration-500',
-      'hover:scale-[1.02] hover:z-50 cursor-pointer',
+      {
+        'hover:scale-[1.02] hover:z-50 cursor-pointer': !isBack,
+      },
       className,
     ),
     duplicates: (index: number) =>
@@ -46,11 +61,14 @@ export const TradingCard = ({ className, imgName, imgUrl, amount = 1, isFoil = f
     image: cn('w-full h-auto object-contain z-20 shadow-md'),
   };
 
+  const image = isBack ? BACK_IMG_URL : imgUrl;
+
   return (
     <div className={classes.container}>
-      <img src={imgUrl} alt={imgName} className={classes.image} />
+      <img src={image} alt={imgName} className={classes.image} />
 
       {amount > 1 &&
+        !isBack &&
         [...Array(amount)].map((_, index) => (
           <div key={index} className={classes.duplicates(index)}>
             <img src={imgUrl} alt={imgName} className={classes.image} />

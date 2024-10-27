@@ -11,3 +11,5 @@ export enum SortOrder {
 }
 
 export const rarityOrder: Array<Rarity> = [Rarity.LEGENDARY, Rarity.EPIC, Rarity.RARE, Rarity.UNCOMMON, Rarity.COMMON];
+
+export const BACK_IMG_URL = 'https://i.imgur.com/6WQjAKP.png';
