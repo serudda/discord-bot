@@ -5,17 +5,57 @@ export interface TradingCardProps {
    * Additional class names to apply to the card.
    */
   className?: string;
+
+  /**
+   * The name of the image to display on the card.
+   */
+  imgName: string;
+
+  /**
+   * The image to display on the card.
+   */
+  imgUrl: string;
+
+  /**
+   * The amount of cards to display.
+   */
+  amount?: number;
+
+  /**
+   * Whether the card is a foil.
+   */
+  isFoil?: boolean;
 }
 
-export const TradingCard = ({ className }: TradingCardProps) => {
+export const TradingCard = ({ className, imgName, imgUrl, amount = 1, isFoil = false }: TradingCardProps) => {
   const classes = {
-    container: cn('rounded-lg shadow-md w-full overflow-hidden', className),
-    image: cn('w-full h-auto object-contain'),
+    container: cn(
+      'w-full relative',
+      'rounded-lg',
+      'transition-transform ease-elastic group duration-500',
+      'hover:scale-[1.02] hover:z-50 cursor-pointer',
+      className,
+    ),
+    duplicates: (index: number) =>
+      cn('absolute w-full h-full top-0 left-0 bg-cover transition-transform ease-elastic duration-500', {
+        'group-hover:-translate-y group-hover:rotate-[-1deg] group-hover:-translate-x-2 z-[10]': index >= 4,
+        'group-hover:translate-y group-hover:rotate-[3deg] z-[15]': index === 3,
+        'group-hover:-translate-x-2 group-hover:rotate-[-3deg] z-[13]': index === 2,
+        'group-hover:translate-x-3 group-hover:rotate-[1deg] z-[16]': index === 1,
+      }),
+    image: cn('w-full h-auto object-contain z-20 shadow-md'),
   };
 
   return (
     <div className={classes.container}>
-      <img src="https://i.imgur.com/BtviSjC.png" alt="Name" className={classes.image} />
+      <img src={imgUrl} alt={imgName} className={classes.image} />
+
+      {amount > 1 &&
+        [...Array(amount)].map((_, index) => (
+          <div key={index} className={classes.duplicates(index)}>
+            <img src={imgUrl} alt={imgName} className={classes.image} />
+          </div>
+        ))}
     </div>
   );
 };
