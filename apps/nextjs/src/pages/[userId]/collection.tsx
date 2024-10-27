@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FilterMode, SortOrder } from '~/common';
-import { CategorySection, UserSidebar } from '~/components';
+import { CategorySection, HolographicCard, UserSidebar } from '~/components';
 import { api } from '~/utils';
 import { useRouter } from 'next/router';
 
@@ -21,6 +21,7 @@ const UserCollectionPage = () => {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
   if (!isMounted) return null;
 
   return (
@@ -44,6 +45,7 @@ const UserCollectionPage = () => {
             userCollection={userCollection}
           />
         </div>
+        {isMounted && <HolographicCard />}
       </div>
     </main>
   );

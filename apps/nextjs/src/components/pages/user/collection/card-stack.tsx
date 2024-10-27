@@ -40,10 +40,10 @@ export const CardStack = ({ card, isOwned, ownedCardMap }: CardStackProps) => {
     }),
     duplicateCards: (stackIndex: number) =>
       cn('absolute w-full h-full top-0 left-0 bg-cover transition-transform ease-elastic duration-500', {
-        'group-hover:-translate-y-4 group-hover:rotate-[-4deg] group-hover:-translate-x-2 z-[10]': stackIndex === 3,
-        'group-hover:translate-y-4 group-hover:rotate-[7deg] z-[15]': stackIndex === 2,
-        'group-hover:-translate-x-4 group-hover:rotate-[-7deg] z-[13]': stackIndex === 1,
-        'group-hover:translate-x-6 group-hover:rotate-[5deg] z-[16]': stackIndex === 0,
+        'group-hover:-translate-y group-hover:rotate-[-2deg] group-hover:-translate-x-2 z-[10]': stackIndex === 3,
+        'group-hover:translate-y group-hover:rotate-[5deg] z-[15]': stackIndex === 2,
+        'group-hover:-translate-x group-hover:rotate-[-5deg] z-[13]': stackIndex === 1,
+        'group-hover:translate-x-2 group-hover:rotate-[3deg] z-[16]': stackIndex === 0,
       }),
     dialogCloseButton: cn(
       'group',
@@ -94,21 +94,13 @@ export const CardStack = ({ card, isOwned, ownedCardMap }: CardStackProps) => {
             <div className="w-full relative atropos-scale space-y-4">
               <img
                 src={primaryCard.image}
-                className="w-full h-auto relative "
+                className="w-full h-auto relative"
                 alt="Card Shine"
                 draggable="false"
                 data-atropos-offset="0"
               />
 
-              {cardGroup.foil && (
-                <img
-                  src="/assets/images/emblems/FOIL.png"
-                  className="w-16 absolute top-12 left-8 h-auto"
-                  alt="Foil Emblem"
-                  draggable="false"
-                  data-atropos-offset="10"
-                />
-              )}
+              {cardGroup.foil && <div className="card-shine z-30"></div>}
             </div>
           </Atropos>
 

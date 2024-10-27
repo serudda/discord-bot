@@ -29,6 +29,7 @@
     "@trpc/next": "^10.45.2",
     "@trpc/react-query": "^10.45.2",
     "@trpc/server": "^10.45.2",
+    "@tweakpane/core": "^2.0.4",
     "atropos": "^2.0.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -41,6 +42,7 @@
     "superjson": "1.9.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "tweakpane": "^4.0.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
