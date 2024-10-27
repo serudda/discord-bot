@@ -1,4 +1,4 @@
-import { TradingCard } from '~/components';
+import { DetailTradingCardModal } from '~/components';
 
 function CollectionPage() {
   return (
@@ -13,7 +13,12 @@ function CollectionPage() {
       <main className="flex-1 p-7">
         <div className="grid gap-9 grid-cols-1 auto-rows-auto sm:grid-cols-2 grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {[...Array(40)].map((_, index) => (
-            <TradingCard key={index} imgName="Name" imgUrl="https://i.imgur.com/za1tSbw.png" amount={index + 1} />
+            <DetailTradingCardModal
+              key={index}
+              imgName="Name"
+              imgUrl="https://i.imgur.com/za1tSbw.png"
+              amount={index + 1}
+            />
           ))}
         </div>
       </main>
