@@ -33,7 +33,7 @@ const command = {
         return;
       }
 
-      const cards = openPackResponse?.result?.newUserCards as UserCardWithCard[];
+      const cards = openPackResponse?.result?.newUserCards as Array<UserCardWithCard>;
       const packs = openPackResponse?.result?.amountOfPacks as number;
       const imageUrls: Array<string> = [];
       const foilFlags: Array<boolean> = [];

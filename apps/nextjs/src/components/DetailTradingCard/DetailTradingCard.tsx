@@ -3,7 +3,9 @@ import { HolographicCard, TradingCard, TradingCardProps } from '~/components';
 import { cn } from '~/utils';
 import Atropos from 'atropos/react';
 
-export interface DetailTradingCardProps extends TradingCardProps {}
+export interface DetailTradingCardProps extends TradingCardProps {
+  isFoil?: boolean;
+}
 
 export const DetailTradingCard = forwardRef<HTMLDivElement, DetailTradingCardProps>(
   ({ className, isFoil, ...props }, ref) => {

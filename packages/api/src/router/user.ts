@@ -6,6 +6,7 @@ import {
   getUserByIdHandler,
   getUserByUsernameHandler,
   getUserCoinsHandler,
+  getUserSeasonProgressHandler,
   increaseUserCoinsHandler,
   registerUserHandler,
   updateUserCoinsHandler,
@@ -18,6 +19,7 @@ import {
   getUserByIdInput,
   getUserByUsernameInput,
   getUserCoinsInput,
+  getUserSeasonProgressInput,
   increaseUserCoinsInput,
   registerUserInput,
   updateUserCoinsInput,
@@ -60,4 +62,8 @@ export const userRouter = createTRPCRouter({
   updateCoins: publicProcedure
     .input(updateUserCoinsInput)
     .mutation(async ({ ctx, input }) => updateUserCoinsHandler({ ctx, input })),
+
+  getUserSeasonProgress: publicProcedure
+    .input(getUserSeasonProgressInput)
+    .query(async ({ ctx, input }) => getUserSeasonProgressHandler({ ctx, input })),
 });

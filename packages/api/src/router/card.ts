@@ -2,6 +2,8 @@ import {
   createCardHandler,
   getAllCardsByRarityHandler,
   getAllCardsHandler,
+  getCardsByPackIdHandler,
+  getCardsBySeasonAndUserIdHandler,
   getCardsBySeasonHandler,
   getRandomCardByRarityHandler,
   getRandomCardsHandler,
@@ -13,6 +15,8 @@ import {
   createCardInput,
   getAllCardsByRarityInput,
   getAllCardsInput,
+  getCardsByPackIdInput,
+  getCardsBySeasonAndUserIdInput,
   getCardsBySeasonInput,
   getRandomCardByRarityInput,
   getRandomCardsInput,
@@ -29,6 +33,9 @@ export const cardRouter = createTRPCRouter({
   getCardsBySeason: publicProcedure
     .input(getCardsBySeasonInput)
     .query(async ({ ctx, input }) => getCardsBySeasonHandler({ ctx, input })),
+  getCardsByPackId: publicProcedure
+    .input(getCardsByPackIdInput)
+    .query(async ({ ctx, input }) => getCardsByPackIdHandler({ ctx, input })),
   getAllCardsByRarity: publicProcedure
     .input(getAllCardsByRarityInput)
     .query(async ({ ctx, input }) => getAllCardsByRarityHandler({ ctx, input })),
@@ -46,4 +53,7 @@ export const cardRouter = createTRPCRouter({
   getUserCollection: publicProcedure
     .input(getUserCollectionInput)
     .query(async ({ ctx, input }) => getUserCollectionHandler({ ctx, input })),
+  getCardsBySeasonAndUserId: publicProcedure
+    .input(getCardsBySeasonAndUserIdInput)
+    .query(async ({ ctx, input }) => getCardsBySeasonAndUserIdHandler({ ctx, input })),
 });

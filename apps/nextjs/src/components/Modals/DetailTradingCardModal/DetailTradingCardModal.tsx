@@ -12,10 +12,11 @@ export interface DetailTradingCardModalProps extends DetailTradingCardProps {}
 
 export const DetailTradingCardModal = ({ ...props }: DetailTradingCardModalProps) => {
   const ref = useRef<HTMLDivElement>(null);
+  const { isBack } = props;
 
   return (
     <Dialog>
-      <DialogTrigger>
+      <DialogTrigger disabled={isBack}>
         <TradingCard {...props} />
       </DialogTrigger>
       <DialogContent className="p-4 rounded-lg bg-transparent border-none">

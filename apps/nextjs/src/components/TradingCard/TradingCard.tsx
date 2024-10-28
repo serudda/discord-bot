@@ -29,18 +29,13 @@ export interface TradingCardProps {
   hasHoverEffect?: boolean;
 
   /**
-   * Whether the card is a foil.
-   */
-  isFoil?: boolean;
-
-  /**
    * Whether the card is a back.
    */
   isBack?: boolean;
 }
 
 export const TradingCard = forwardRef<HTMLDivElement, TradingCardProps>(
-  ({ className, imgName, imgUrl, amount = 1, isFoil = false, isBack = false, hasHoverEffect = true }, ref) => {
+  ({ className, imgName, imgUrl, amount = 1, isBack = false, hasHoverEffect = true }, ref) => {
     const classes = {
       container: cn(
         'w-full relative',

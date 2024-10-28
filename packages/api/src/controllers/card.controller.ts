@@ -568,6 +568,13 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
   }
 };
 
+/**
+ * Get all cards by season and user ID.
+ *
+ * @param ctx Ctx.
+ * @param input GetCardsBySeasonAndUserIdInputType.
+ * @returns Cards by season and user ID.
+ */
 export const getCardsBySeasonAndUserIdHandler = async ({ ctx, input }: Params<GetCardsBySeasonAndUserIdInputType>) => {
   try {
     const { seasonId, userId } = input;
