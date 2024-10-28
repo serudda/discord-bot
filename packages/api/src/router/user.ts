@@ -35,7 +35,7 @@ export const userRouter = createTRPCRouter({
     .input(getUserByEmailInput)
     .query(async ({ ctx, input }) => getUserByEmailHandler({ ctx, input })),
 
-  getUserByUsername: publicProcedure
+  getByUsername: publicProcedure
     .input(getUserByUsernameInput)
     .query(async ({ ctx, input }) => getUserByUsernameHandler({ ctx, input })),
 

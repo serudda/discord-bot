@@ -156,14 +156,53 @@ export const getUserByEmailHandler = async ({ ctx, input }: Params<GetUserByEmai
  * @returns User.
  */
 export const getUserByUsernameHandler = async ({ ctx, input }: Params<GetUserByUsernameInputType>) => {
-  return ctx.prisma.user.findFirst({
-    where: {
-      username: input.username,
-    },
-    include: {
-      accounts: true,
-    },
-  });
+  try {
+    const { username } = input;
+
+    const user = await ctx.prisma.user.findFirst({
+      where: {
+        username,
+      },
+      include: {
+        accounts: true,
+      },
+    });
+
+    // Check if user exists
+    if (!user) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user,
+      },
+    };
+  } catch (error: unknown) {
+    // Prisma error (Database issue)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === PrismaErrorCode.RecordDoesNotExist) {
+        throw new TRPCError({
+          code: TRPCErrorCode.NOT_FOUND,
+          message: UserError.UserNotFound,
+        });
+      }
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
 };
 
 /**

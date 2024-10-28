@@ -19,10 +19,11 @@ const command = {
         return;
       }
 
+      const username = user.discriminator === '0' ? user.username : `${user.username}${user.discriminator}`;
       const response = await api.user.register.mutate({
         discordId: user.id,
         name: user.displayName,
-        username: user.username,
+        username,
         image: avatarURL,
       });
 

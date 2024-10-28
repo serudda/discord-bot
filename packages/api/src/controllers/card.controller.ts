@@ -822,7 +822,7 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
  * @param input GetCollectionInputType.
  * @returns User's collection.
  */
-export const getCollectionHandler = async ({ ctx, input }: Params<GetCollectionInputType>) => {
+export const getUserCollectionHandler = async ({ ctx, input }: Params<GetCollectionInputType>) => {
   try {
     const { userId } = input;
 
