@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   DetailTradingCard,
   DetailTradingCardProps,
@@ -6,14 +7,11 @@ import {
   DialogTrigger,
   TradingCard,
 } from '~/components';
-import { cn } from '~/utils';
 
 export interface DetailTradingCardModalProps extends DetailTradingCardProps {}
 
-export const DetailTradingCardModal = ({ className, ...props }: DetailTradingCardModalProps) => {
-  const classes = {
-    container: cn(className),
-  };
+export const DetailTradingCardModal = ({ ...props }: DetailTradingCardModalProps) => {
+  const ref = useRef<HTMLDivElement>(null);
 
   return (
     <Dialog>
@@ -21,7 +19,7 @@ export const DetailTradingCardModal = ({ className, ...props }: DetailTradingCar
         <TradingCard {...props} />
       </DialogTrigger>
       <DialogContent className="p-4 rounded-lg bg-transparent border-none">
-        <DetailTradingCard {...props} amount={1} hasHoverEffect={false} />
+        <DetailTradingCard {...props} amount={1} hasHoverEffect={false} ref={ref} />
       </DialogContent>
     </Dialog>
   );

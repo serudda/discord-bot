@@ -1,1 +1,1 @@
-export * from './use-example';
+export * from './useHologramEffect';

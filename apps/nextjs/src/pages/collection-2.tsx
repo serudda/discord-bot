@@ -16,7 +16,7 @@ function CollectionPage() {
             <DetailTradingCardModal
               key={index}
               imgName="Name"
-              imgUrl="https://i.imgur.com/za1tSbw.png"
+              imgUrl="https://i.imgur.com/3AxfvGA.png"
               amount={index + 1}
             />
           ))}
