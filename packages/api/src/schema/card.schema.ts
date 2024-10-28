@@ -1,4 +1,4 @@
-import { Rarity } from '../common';
+import { OrderBy, Rarity, SortField } from '../common';
 import { z, type TypeOf } from 'zod';
 
 /*------------------------------------*/
@@ -77,10 +77,12 @@ export type CreateCardInputType = TypeOf<typeof createCardInput>;
 
 /*------------------------------------*/
 
-export const getCollectionInput = z.object({
+export const getUserCollectionInput = z.object({
   userId: z.string(),
+  sortBy: z.nativeEnum(SortField).optional(),
+  orderBy: z.nativeEnum(OrderBy).optional(),
 });
-export type GetCollectionInputType = TypeOf<typeof getCollectionInput>;
+export type GetUserCollectionInputType = TypeOf<typeof getUserCollectionInput>;
 
 /*------------------------------------*/
 

@@ -14,9 +14,9 @@ import {
   getAllCardsByRarityInput,
   getAllCardsInput,
   getCardsBySeasonInput,
-  getCollectionInput,
   getRandomCardByRarityInput,
   getRandomCardsInput,
+  getUserCollectionInput,
   giveCoinsInput,
   setCoinsInput,
 } from '../schema/card.schema';
@@ -44,6 +44,6 @@ export const cardRouter = createTRPCRouter({
     .input(createCardInput)
     .mutation(async ({ ctx, input }) => createCardHandler({ ctx, input })),
   getUserCollection: publicProcedure
-    .input(getCollectionInput)
+    .input(getUserCollectionInput)
     .query(async ({ ctx, input }) => getUserCollectionHandler({ ctx, input })),
 });

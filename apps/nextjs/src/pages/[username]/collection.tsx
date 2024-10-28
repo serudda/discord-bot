@@ -1,5 +1,5 @@
 import { DetailTradingCardModal } from '~/components';
-import { api, Response } from '~/utils';
+import { api, OrderBy, Response, SortField } from '~/utils';
 import { useRouter } from 'next/router';
 
 const CollectionPage = () => {
@@ -7,7 +7,7 @@ const CollectionPage = () => {
   const { username } = router.query;
   const { data: userData } = api.user.getByUsername.useQuery({ username: username as string }, { enabled: !!username });
   const { data: collectionData } = api.card.getUserCollection.useQuery(
-    { userId: userData?.result?.user?.id as string },
+    { userId: userData?.result?.user?.id as string, sortBy: SortField.NUMBER, orderBy: OrderBy.ASC },
     { enabled: userData?.result?.status === Response.SUCCESS },
   );
 

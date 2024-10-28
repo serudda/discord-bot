@@ -1,5 +1,5 @@
 import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
-import { getRandomRarity, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
+import { getRandomRarity, getSortingOptions, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
   AddCardToCollectionInputType,
   BuyPackInputType,
@@ -8,9 +8,9 @@ import type {
   GetAllCardsInputType,
   GetCardsByPackIdInputType,
   GetCardsBySeasonInputType,
-  GetCollectionInputType,
   GetRandomCardByRarityInputType,
   GetRandomCardsInputType,
+  GetUserCollectionInputType,
   GiveCoinsInputType,
   SetCoinsInputType,
 } from '../schema/card.schema';
@@ -822,9 +822,9 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
  * @param input GetCollectionInputType.
  * @returns User's collection.
  */
-export const getUserCollectionHandler = async ({ ctx, input }: Params<GetCollectionInputType>) => {
+export const getUserCollectionHandler = async ({ ctx, input }: Params<GetUserCollectionInputType>) => {
   try {
-    const { userId } = input;
+    const { userId, sortBy, orderBy } = input;
 
     // Check if user exists
     const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
@@ -846,6 +846,7 @@ export const getUserCollectionHandler = async ({ ctx, input }: Params<GetCollect
       include: {
         card: true,
       },
+      orderBy: [...getSortingOptions(sortBy, orderBy)],
     });
 
     if (!userCollection || userCollection.length === 0) {
