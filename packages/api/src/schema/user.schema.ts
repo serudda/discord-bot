@@ -82,3 +82,9 @@ export const decreaseUserCoinsInput = z.object({
 export type DecreaseUserCoinsInputType = TypeOf<typeof decreaseUserCoinsInput>;
 
 /*------------------------------------*/
+
+export const getUserSeasonProgressInput = z.object({
+  seasonId: z.string(),
+  userId: z.string(),
+});
+export type GetUserSeasonProgressInputType = TypeOf<typeof getUserSeasonProgressInput>;

@@ -22,6 +22,14 @@ export type GetCardsBySeasonInputType = TypeOf<typeof getCardsBySeasonInput>;
 
 /*------------------------------------*/
 
+export const getCardsBySeasonAndUserIdInput = z.object({
+  seasonId: z.string(),
+  userId: z.string(),
+});
+export type GetCardsBySeasonAndUserIdInputType = TypeOf<typeof getCardsBySeasonAndUserIdInput>;
+
+/*------------------------------------*/
+
 export const getCardsByPackIdInput = z.object({
   packId: z.string(),
 });

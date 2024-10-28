@@ -1,4 +1,5 @@
-import { AccountError, CommonError, UserError } from '@discord-bot/error-handler';
+import type { Card, UserCard } from '@discord-bot/db';
+import { AccountError, CardError, CommonError, SeasonError, UserError } from '@discord-bot/error-handler';
 import { PrismaErrorCode, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
   CreateUserInputType,
@@ -8,11 +9,13 @@ import type {
   GetUserByIdInputType,
   GetUserByUsernameInputType,
   GetUserCoinsInputType,
+  GetUserSeasonProgressInputType,
   IncreaseUserCoinsInputType,
   RegisterUserInputType,
   UpdateUserCoinsInputType,
 } from '../schema/user.schema';
 import { createAccountHandler } from './account.controller';
+import { getCardsBySeasonAndUserIdHandler, getCardsBySeasonHandler } from './card.controller';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
@@ -652,6 +655,112 @@ export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUs
         user: updatedUser,
       },
     };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get user's progress in a specific season, showing owned
+ * and missing cards.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserSeasonProgressInputType.
+ * @returns User's progress in season (owned and missing
+ *   cards).
+ */
+export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUserSeasonProgressInputType>) => {
+  try {
+    const { seasonId, userId } = input;
+
+    // Start transaction
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
+      // Get all cards from season
+      const seasonCardsResponse = await getCardsBySeasonHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { seasonId },
+      });
+
+      // Check if season has cards
+      if (!seasonCardsResponse || !seasonCardsResponse.result || seasonCardsResponse.result.status === Response.ERROR) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: SeasonError.CardsNotFoundBySeason,
+          },
+        };
+      }
+
+      // Get user's card from the season
+      const userCardsResponse = await getCardsBySeasonAndUserIdHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { seasonId, userId },
+      });
+
+      // Check if user has cards in the season
+      if (!userCardsResponse || !userCardsResponse.result || userCardsResponse.result.status === Response.ERROR) {
+        return {
+          result: {
+            status: Response.ERROR,
+            message: CardError.CardsNotFoundBySeasonAndUserId,
+          },
+        };
+      }
+
+      // Combine season cards with user collection status
+      const seasonCards = seasonCardsResponse.result.cards as Array<Card>;
+      const userCards = userCardsResponse.result.cards as Array<UserCard>;
+      const seasonProgress = seasonCards.map((seasonCard) => {
+        const userCard = userCards.find((card) => card.cardId === seasonCard.id);
+        return {
+          card: seasonCard,
+          quantity: userCard?.quantity ?? 0,
+          isFoil: userCard?.isFoil ?? false,
+          isOwned: !!userCard,
+        };
+      });
+
+      // Calculate progress statistics
+      const totalCards = seasonCards.length;
+      const ownedCards = userCards.length;
+      const progressPercentage = (ownedCards / totalCards) * 100;
+
+      return {
+        result: {
+          status: Response.SUCCESS,
+          progress: {
+            cards: seasonProgress,
+            stats: {
+              total: totalCards,
+              owned: ownedCards,
+              missing: totalCards - ownedCards,
+              percentage: progressPercentage,
+            },
+          },
+        },
+      };
+    });
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {

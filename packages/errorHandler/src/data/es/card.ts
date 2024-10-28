@@ -14,6 +14,7 @@ export enum CardError {
   NoUserCards = 'NoUserCards',
   RandomCardsNotFound = 'RandomCardsNotFound',
   GiveCoinsRecipientEqualsSender = 'GiveCoinsRecipientEqualsSender',
+  CardsNotFoundBySeasonAndUserId = 'CardsNotFoundBySeasonAndUserId',
 }
 
 export const CardErrors: Record<CardError, string> = {
@@ -32,4 +33,6 @@ export const CardErrors: Record<CardError, string> = {
   [CardError.NoUserCards]: 'El usuario aún no tiene cartas',
   [CardError.RandomCardsNotFound]: 'No se pudo obtener cartas aleatorias por rareza',
   [CardError.GiveCoinsRecipientEqualsSender]: 'No puedes darte monedas a ti mismo',
+  [CardError.CardsNotFoundBySeasonAndUserId]:
+    'No pudimos encontrar las cartas de esta temporada para el usuario que buscas',
 };

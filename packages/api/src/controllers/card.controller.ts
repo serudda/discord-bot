@@ -1,5 +1,5 @@
 import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
-import { getRandomRarity, getSortingOptions, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
+import { getRandomRarity, getSortingOptions, OrderBy, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
 import type {
   AddCardToCollectionInputType,
   BuyPackInputType,
@@ -7,6 +7,7 @@ import type {
   GetAllCardsByRarityInputType,
   GetAllCardsInputType,
   GetCardsByPackIdInputType,
+  GetCardsBySeasonAndUserIdInputType,
   GetCardsBySeasonInputType,
   GetRandomCardByRarityInputType,
   GetRandomCardsInputType,
@@ -518,6 +519,9 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
       where: {
         seasonId,
       },
+      orderBy: {
+        cardNumber: OrderBy.ASC,
+      },
     });
 
     // Check if cards were found
@@ -556,6 +560,56 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
         });
       }
 
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+export const getCardsBySeasonAndUserIdHandler = async ({ ctx, input }: Params<GetCardsBySeasonAndUserIdInputType>) => {
+  try {
+    const { seasonId, userId } = input;
+
+    // Get all cards by season and user ID
+    const cards = await ctx.prisma.userCard.findMany({
+      where: {
+        userId,
+        card: {
+          seasonId,
+        },
+      },
+    });
+
+    // Check if cards were found
+    if (!cards || cards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardsNotFoundBySeasonAndUserId,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        cards,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      const message = CommonError.InvalidInput;
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
         message: error.message,
