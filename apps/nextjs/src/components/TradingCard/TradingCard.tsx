@@ -78,7 +78,9 @@ export const TradingCard = forwardRef<HTMLDivElement, TradingCardProps>(
     return (
       <div ref={ref} className={classes.container}>
         {/* CARD AMOUNT */}
-        {detailedCard && <FloatCounter cardAmount={quantity} foilAmount={foilQuantity} cardNumber={cardNumber} />}
+        {hasHoverEffect && (
+          <FloatCounter cardAmount={quantity} foilAmount={foilQuantity} cardNumber={cardNumber} isBack={isBack} />
+        )}
 
         {/* CARD IMAGE */}
         <img src={image} alt={imgName} className={classes.image} />
