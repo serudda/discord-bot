@@ -732,13 +732,18 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
       const seasonCards = seasonCardsResponse.result.cards as Array<Card>;
       const userCards = userCardsResponse.result.cards as Array<UserCard>;
       const seasonProgress = seasonCards.map((seasonCard) => {
-        const userCard = userCards.find((card) => card.cardId === seasonCard.id);
+        // Find matching user cards
+        const matchingUserCards = userCards.filter((card) => card.cardId === seasonCard.id);
+
+        // Find normal and foil cards
+        const normalCard = matchingUserCards.find((card) => !card.isFoil);
+        const foilCard = matchingUserCards.find((card) => card.isFoil);
         return {
           card: seasonCard,
-          quantity: userCard?.quantity ?? 0,
-          isFoil: userCard?.isFoil ?? false,
-          foilQuantity: userCard?.isFoil ? userCard?.quantity : 0,
-          isOwned: !!userCard,
+          quantity: (normalCard?.quantity ?? 0) + (foilCard?.quantity ?? 0),
+          isFoil: foilCard?.isFoil ?? false,
+          foilQuantity: foilCard?.quantity ?? 0,
+          isOwned: !!normalCard || !!foilCard,
         };
       });
 
