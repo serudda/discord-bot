@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
 import { BACK_IMG_URL } from '~/common';
 import { cn } from '~/utils';
+import { FloatCounter } from './components';
 
 export interface TradingCardProps {
   /**
@@ -36,13 +37,14 @@ export interface TradingCardProps {
 
 export const TradingCard = forwardRef<HTMLDivElement, TradingCardProps>(
   ({ className, imgName, imgUrl, amount = 1, isBack = false, hasHoverEffect = true }, ref) => {
+    const detailedCard = !isBack && hasHoverEffect;
     const classes = {
       container: cn(
         'w-full relative',
         'rounded-lg',
         'transition-transform ease-elastic group duration-500',
         {
-          'hover:scale-[1.02] hover:z-50 cursor-pointer': !isBack && hasHoverEffect,
+          'hover:scale-[1.02] hover:z-30 cursor-pointer': detailedCard,
         },
         className,
       ),
@@ -62,6 +64,10 @@ export const TradingCard = forwardRef<HTMLDivElement, TradingCardProps>(
 
     return (
       <div ref={ref} className={classes.container}>
+        {/* CARD AMOUNT */}
+        {detailedCard && <FloatCounter cardAmount={amount} foilAmount={amount} />}
+
+        {/* CARD IMAGE */}
         <img src={image} alt={imgName} className={classes.image} />
 
         {displayAmount > 1 &&
