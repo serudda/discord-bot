@@ -22,7 +22,17 @@ export interface TradingCardProps {
   /**
    * The amount of cards to display.
    */
-  amount?: number;
+  quantity?: number;
+
+  /**
+   * The amount of foil cards.
+   */
+  foilQuantity?: number;
+
+  /**
+   * The card identifier.
+   */
+  cardNumber?: number;
 
   /**
    * Whether the card has a hover effect.
@@ -36,7 +46,10 @@ export interface TradingCardProps {
 }
 
 export const TradingCard = forwardRef<HTMLDivElement, TradingCardProps>(
-  ({ className, imgName, imgUrl, amount = 1, isBack = false, hasHoverEffect = true }, ref) => {
+  (
+    { className, imgName, imgUrl, quantity = 1, foilQuantity = 0, cardNumber, hasHoverEffect = true, isBack = false },
+    ref,
+  ) => {
     const detailedCard = !isBack && hasHoverEffect;
     const classes = {
       container: cn(
@@ -58,14 +71,14 @@ export const TradingCard = forwardRef<HTMLDivElement, TradingCardProps>(
       image: cn('w-full h-auto object-contain z-20 shadow-md'),
     };
 
-    const displayAmount = Math.min(amount, 4);
+    const displayAmount = Math.min(quantity, 4);
 
     const image = isBack ? BACK_IMG_URL : imgUrl;
 
     return (
       <div ref={ref} className={classes.container}>
         {/* CARD AMOUNT */}
-        {detailedCard && <FloatCounter cardAmount={amount} foilAmount={amount} />}
+        {detailedCard && <FloatCounter cardAmount={quantity} foilAmount={foilQuantity} cardNumber={cardNumber} />}
 
         {/* CARD IMAGE */}
         <img src={image} alt={imgName} className={classes.image} />

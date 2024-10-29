@@ -36,9 +36,11 @@ const CollectionPage = () => {
               key={index}
               imgName={item.card.name}
               imgUrl={item.card.image}
-              amount={item.quantity}
+              quantity={item.quantity}
+              foilQuantity={item.foilQuantity}
               isFoil={item.isFoil}
               isBack={!item.isOwned}
+              cardNumber={item.card.cardNumber}
             />
           ))}
         </div>

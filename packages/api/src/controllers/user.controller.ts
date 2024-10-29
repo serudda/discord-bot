@@ -737,6 +737,7 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
           card: seasonCard,
           quantity: userCard?.quantity ?? 0,
           isFoil: userCard?.isFoil ?? false,
+          foilQuantity: userCard?.isFoil ? userCard?.quantity : 0,
           isOwned: !!userCard,
         };
       });
@@ -744,6 +745,7 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
       // Calculate progress statistics
       const totalCards = seasonCards.length;
       const ownedCards = userCards.length;
+      const foilCards = userCards.filter((card) => card.isFoil).length;
       const progressPercentage = (ownedCards / totalCards) * 100;
 
       return {
@@ -754,6 +756,7 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
             stats: {
               total: totalCards,
               owned: ownedCards,
+              foils: foilCards,
               missing: totalCards - ownedCards,
               percentage: progressPercentage,
             },
