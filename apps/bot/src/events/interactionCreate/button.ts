@@ -12,11 +12,7 @@ export default {
   async execute(interaction: Interaction) {
     if (!interaction.isButton()) return;
 
-    console.log('** interaction **', interaction);
-
     const button = interaction.client.buttons.get(interaction.customId) as Command;
-
-    console.log('** button **', button);
 
     if (!button) {
       console.error(`Not found button: ${interaction.customId}`);

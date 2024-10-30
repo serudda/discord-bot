@@ -6,6 +6,7 @@ const client = new Client({
 });
 
 client.buttons = new Collection();
+client.dropdowns = new Collection();
 
 void (async () => {
   try {
