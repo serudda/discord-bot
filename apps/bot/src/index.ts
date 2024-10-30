@@ -1,9 +1,11 @@
 import { loadCommands, loadEvents } from './utils';
-import { Client, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, GatewayIntentBits } from 'discord.js';
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
+
+client.buttons = new Collection();
 
 void (async () => {
   try {

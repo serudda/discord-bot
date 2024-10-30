@@ -1,4 +1,5 @@
 export enum UserError {
+  NoGems = 'NoGems',
   NoCoins = 'NoCoins',
   NoDecreaseCoins = 'NoDecreaseCoins',
   UnAuthorized = 'UnAuthorized',
@@ -10,6 +11,7 @@ export enum UserError {
 }
 
 export const UserErrors: Record<UserError, string> = {
+  [UserError.NoGems]: 'No tienes suficientes gemas',
   [UserError.NoCoins]: 'No tienes suficientes monedas',
   [UserError.NoDecreaseCoins]: 'No se pudieron restar las monedas al usuario',
   [UserError.UnAuthorized]: 'No estas autorizado para realizar esta acción',

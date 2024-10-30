@@ -1,23 +1,84 @@
 import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
 import { getRandomRarity, getSortingOptions, OrderBy, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
-import type {
-  AddCardToCollectionInputType,
-  BuyPackInputType,
-  CreateCardInputType,
-  GetAllCardsByRarityInputType,
-  GetAllCardsInputType,
-  GetCardsByPackIdInputType,
-  GetCardsBySeasonAndUserIdInputType,
-  GetCardsBySeasonInputType,
-  GetRandomCardByRarityInputType,
-  GetRandomCardsInputType,
-  GetUserCollectionInputType,
-  GiveCoinsInputType,
-  SetCoinsInputType,
+import {
+  type AddCardToCollectionInputType,
+  type BuyPackInputType,
+  type CreateCardInputType,
+  type GetAllCardsByRarityInputType,
+  type GetAllCardsInputType,
+  type GetCardByIdInputType,
+  type GetCardsByPackIdInputType,
+  type GetCardsBySeasonAndUserIdInputType,
+  type GetCardsBySeasonInputType,
+  type GetRandomCardByRarityInputType,
+  type GetRandomCardFromUserPackInputType,
+  type GetRandomCardsInputType,
+  type GetUserCollectionInputType,
+  type GiveCoinsInputType,
+  type SetCoinsInputType,
 } from '../schema/card.schema';
-import { getUserByDiscordIdHandler, getUserByIdHandler } from './user.controller';
+import {
+  decreaseUserGemsHandler,
+  getUserByDiscordIdHandler,
+  getUserByIdHandler,
+  getUserGemsHandler,
+} from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+/**
+ * Get card by ID.
+ *
+ * @param ctx Ctx.
+ * @param input GetCardByIdInputType.
+ * @returns Card.
+ */
+export const getCardByIdHandler = async ({ ctx, input }: Params<GetCardByIdInputType>) => {
+  try {
+    const { id } = input;
+    const card = await ctx.prisma.card.findUnique({ where: { id } });
+
+    // Check if card was found
+    if (!card) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardNotFound,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        card,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
 
 /**
  * Create a card.
@@ -782,6 +843,134 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
         cards: randomCards,
       },
     };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      const message = CommonError.InvalidInput;
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        const message = UserError.UnAuthorized;
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get random card from user pack.
+ *
+ * @param ctx Ctx.
+ * @param input GetRandomCardFromUserPackInputType.
+ * @returns Random card from user pack.
+ */
+export const addRandomCardFromUserPackHandler = async ({ ctx, input }: Params<GetRandomCardFromUserPackInputType>) => {
+  try {
+    const { discordId, cards } = input;
+    const GEMS_COST = await ctx.configService.getGlobalConfig<number>('GEM_COST_TO_GET_RANDOM_CARD', 1);
+
+    if (!cards || cards.length === 0) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardsNotFound,
+        },
+      };
+    }
+
+    return await ctx.prisma.$transaction(
+      async (prismaTransaction) => {
+        // Get user gems
+        const userResponse = await getUserGemsHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: { discordId },
+        });
+
+        // Check if user has enough gems
+        const userGems = userResponse?.result.gems;
+        if (userGems && userGems < GEMS_COST) {
+          return {
+            result: {
+              status: Response.ERROR,
+              message: UserError.NoGems,
+            },
+          };
+        }
+
+        // Get random card from user pack
+        const randomCardId = cards[Math.floor(Math.random() * cards.length)];
+
+        // Get card by ID
+        const cardResponse = await getCardByIdHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: { id: randomCardId as string },
+        });
+
+        // Check if card was found
+        if (!cardResponse || !cardResponse.result || cardResponse.result.status === Response.ERROR) {
+          return {
+            result: {
+              status: Response.ERROR,
+              message: cardResponse?.result.message,
+            },
+          };
+        }
+
+        const randomCard = cardResponse.result.card;
+        const userId = userResponse?.result.userId as string;
+
+        // Add card to user collection
+        const addCardToCollectionResponse = await addCardToCollectionHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: { userId, cardId: randomCard?.id as string, quantity: 1, isFoil: false },
+        });
+
+        // Check if card was added to user collection
+        if (
+          !addCardToCollectionResponse ||
+          !addCardToCollectionResponse.result ||
+          addCardToCollectionResponse.result.status === Response.ERROR
+        ) {
+          return {
+            result: {
+              status: Response.ERROR,
+              message: addCardToCollectionResponse?.result.message,
+            },
+          };
+        }
+
+        // Decrease user gems
+        await decreaseUserGemsHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: { discordId: userId, gems: GEMS_COST },
+        });
+
+        return {
+          result: {
+            status: Response.SUCCESS,
+            card: addCardToCollectionResponse.result.userCard,
+          },
+        };
+      },
+      {
+        timeout: 10000,
+        maxWait: 10000,
+      },
+    );
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {

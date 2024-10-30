@@ -10,6 +10,13 @@ export type BuyPackInputType = TypeOf<typeof buyPackInput>;
 
 /*------------------------------------*/
 
+export const getCardByIdInput = z.object({
+  id: z.string(),
+});
+export type GetCardByIdInputType = TypeOf<typeof getCardByIdInput>;
+
+/*------------------------------------*/
+
 export const getAllCardsInput = z.object({});
 export type GetAllCardsInputType = TypeOf<typeof getAllCardsInput>;
 
@@ -55,6 +62,14 @@ export const getRandomCardByRarityInput = z.object({
   rarity: z.nativeEnum(Rarity),
 });
 export type GetRandomCardByRarityInputType = TypeOf<typeof getRandomCardByRarityInput>;
+
+/*------------------------------------*/
+
+export const getRandomCardFromUserPackInput = z.object({
+  discordId: z.string(),
+  cards: z.array(z.string()),
+});
+export type GetRandomCardFromUserPackInputType = TypeOf<typeof getRandomCardFromUserPackInput>;
 
 /*------------------------------------*/
 

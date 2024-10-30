@@ -4,15 +4,19 @@ import { PrismaErrorCode, Response, TRPCErrorCode, type Ctx, type Params } from 
 import type {
   CreateUserInputType,
   DecreaseUserCoinsInputType,
+  DecreaseUserGemsInputType,
   GetUserByDiscordIdInputType,
   GetUserByEmailInputType,
   GetUserByIdInputType,
   GetUserByUsernameInputType,
   GetUserCoinsInputType,
+  GetUserGemsInputType,
   GetUserSeasonProgressInputType,
   IncreaseUserCoinsInputType,
+  IncreaseUserGemsInputType,
   RegisterUserInputType,
   UpdateUserCoinsInputType,
+  UpdateUserGemsInputType,
 } from '../schema/user.schema';
 import { createAccountHandler } from './account.controller';
 import { getCardsBySeasonAndUserIdHandler, getCardsBySeasonHandler } from './card.controller';
@@ -648,6 +652,268 @@ export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUs
         },
       };
     }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user: updatedUser,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get user gems.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserGemsInputType.
+ * @returns Gems.
+ */
+export const getUserGemsHandler = async ({ ctx, input }: Params<GetUserGemsInputType>) => {
+  try {
+    const { discordId } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        userId: userResponse.result.user?.id,
+        gems: userResponse.result.user?.gems,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Update user gems.
+ *
+ * @param ctx Ctx.
+ * @param input UpdateUserGemsInputType.
+ * @returns User.
+ */
+export const updateUserGemsHandler = async ({ ctx, input }: Params<UpdateUserGemsInputType>) => {
+  try {
+    const { discordId, gems } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    // Update user gems
+    const user = userResponse.result.user;
+    const updatedUser = await ctx.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        gems,
+      },
+    });
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user: updatedUser,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Increase user gems.
+ *
+ * @param ctx Ctx.
+ * @param input IncreaseUserGemsInputType.
+ * @returns User.
+ */
+export const increaseUserGemsHandler = async ({ ctx, input }: Params<IncreaseUserGemsInputType>) => {
+  try {
+    const { discordId, gems } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    // Increase user gems
+    const user = userResponse.result.user;
+    const updatedUser = await ctx.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        gems: {
+          increment: gems,
+        },
+      },
+    });
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user: updatedUser,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Decrease user gems.
+ *
+ * @param ctx Ctx.
+ * @param input DecreaseUserGemsInputType.
+ * @returns User.
+ */
+export const decreaseUserGemsHandler = async ({ ctx, input }: Params<DecreaseUserGemsInputType>) => {
+  try {
+    const { discordId, gems } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    // Decrease user gems
+    const user = userResponse.result.user;
+    const updatedUser = await ctx.prisma.user.update({
+      where: {
+        id: user?.id,
+      },
+      data: {
+        gems: {
+          decrement: gems,
+        },
+      },
+    });
 
     return {
       result: {

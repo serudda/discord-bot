@@ -600,142 +600,150 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
   const { userId } = input;
 
   try {
-    return await ctx.prisma.$transaction(async (prismaTransaction) => {
-      // Get random pack
-      const randomPackResponse = await prismaTransaction.pack.findFirst({
-        where: {
-          userId,
-        },
-      });
-
-      // Check if pack was found
-      if (!randomPackResponse) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: PackError.NoUserPack,
+    return await ctx.prisma.$transaction(
+      async (prismaTransaction) => {
+        // Get random pack
+        const randomPackResponse = await prismaTransaction.pack.findFirst({
+          where: {
+            userId,
           },
-        };
-      }
+        });
 
-      // Get cards by pack ID
-      const cardsByPackIdResponse = await getCardsByPackIdHandler({
-        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-        input: { packId: randomPackResponse.id },
-      });
-
-      // Check if cards were found
-      if (
-        !cardsByPackIdResponse ||
-        !cardsByPackIdResponse.result ||
-        cardsByPackIdResponse.result.status === Response.ERROR
-      ) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: cardsByPackIdResponse?.result.message,
-          },
-        };
-      }
-
-      // Delete pack
-      const deletePackResponse = await deletePackHandler({
-        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-        input: { packId: randomPackResponse.id },
-      });
-
-      // Check if pack was deleted
-      if (!deletePackResponse || !deletePackResponse.result || deletePackResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: PackError.NoDeletePack,
-          },
-        };
-      }
-
-      // Add cards to user's collection
-      const randomCards = cardsByPackIdResponse?.result.cards?.map((packCard) => {
-        return {
-          ...packCard.card,
-          isFoil: packCard.isFoil,
-        };
-      });
-
-      // Check if random cards were found
-      if (!randomCards) {
-        return {
-          status: Response.ERROR,
-          message: CardError.CardsNotFound,
-        };
-      }
-
-      const newUserCards = await Promise.all(
-        randomCards.map(async (card) => {
-          if (!card) return;
-
-          // Add user card
-          const newAddedCard = await addCardToCollectionHandler({
-            ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-            input: {
-              userId,
-              cardId: card.id,
-              quantity: 1,
-              isFoil: card.isFoil,
+        // Check if pack was found
+        if (!randomPackResponse) {
+          return {
+            result: {
+              status: Response.ERROR,
+              message: PackError.NoUserPack,
             },
-          });
+          };
+        }
 
-          // Check if card was added to user's collection
-          if (!newAddedCard || newAddedCard.result.status === Response.ERROR) {
-            return {
+        // Get cards by pack ID
+        const cardsByPackIdResponse = await getCardsByPackIdHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: { packId: randomPackResponse.id },
+        });
+
+        // Check if cards were found
+        if (
+          !cardsByPackIdResponse ||
+          !cardsByPackIdResponse.result ||
+          cardsByPackIdResponse.result.status === Response.ERROR
+        ) {
+          return {
+            result: {
+              status: Response.ERROR,
+              message: cardsByPackIdResponse?.result.message,
+            },
+          };
+        }
+
+        // Delete pack
+        const deletePackResponse = await deletePackHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: { packId: randomPackResponse.id },
+        });
+
+        // Check if pack was deleted
+        if (!deletePackResponse || !deletePackResponse.result || deletePackResponse.result.status === Response.ERROR) {
+          return {
+            result: {
+              status: Response.ERROR,
+              message: PackError.NoDeletePack,
+            },
+          };
+        }
+
+        // Add cards to user's collection
+        const randomCards = cardsByPackIdResponse?.result.cards?.map((packCard) => {
+          return {
+            ...packCard.card,
+            isFoil: packCard.isFoil,
+          };
+        });
+
+        // Check if random cards were found
+        if (!randomCards) {
+          return {
+            status: Response.ERROR,
+            message: CardError.CardsNotFound,
+          };
+        }
+
+        const newUserCards = await Promise.all(
+          randomCards.map(async (card) => {
+            if (!card) return;
+
+            // Add user card
+            const newAddedCard = await addCardToCollectionHandler({
+              ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+              input: {
+                userId,
+                cardId: card.id,
+                quantity: 1,
+                isFoil: card.isFoil,
+              },
+            });
+
+            // Check if card was added to user's collection
+            if (!newAddedCard || newAddedCard.result.status === Response.ERROR) {
+              return {
+                status: Response.ERROR,
+                message: CardError.NoAddCardToUserCollection,
+              };
+            }
+            return newAddedCard.result.userCard;
+          }),
+        );
+
+        // Check if cards were added to user's collection
+        if (!newUserCards) {
+          return {
+            result: {
               status: Response.ERROR,
               message: CardError.NoAddCardToUserCollection,
-            };
-          }
-          return newAddedCard.result.userCard;
-        }),
-      );
+            },
+          };
+        }
 
-      // Check if cards were added to user's collection
-      if (!newUserCards) {
+        // Get amount of packs by user ID
+        const amountOfPacksResponse = await getAmountOfPacksByUserIdHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: { userId },
+        });
+
+        // Check if amount of packs was found
+        if (
+          !amountOfPacksResponse ||
+          !amountOfPacksResponse.result ||
+          amountOfPacksResponse.result.status === Response.ERROR
+        ) {
+          return {
+            result: {
+              status: Response.ERROR,
+              message: amountOfPacksResponse?.result.message,
+            },
+          };
+        }
+
+        // Return random cards
         return {
           result: {
-            status: Response.ERROR,
-            message: CardError.NoAddCardToUserCollection,
+            status: Response.SUCCESS,
+            newUserCards,
+            amountOfPacks: amountOfPacksResponse.result.amountOfPacks,
           },
         };
-      }
-
-      // Get amount of packs by user ID
-      const amountOfPacksResponse = await getAmountOfPacksByUserIdHandler({
-        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-        input: { userId },
-      });
-
-      // Check if amount of packs was found
-      if (
-        !amountOfPacksResponse ||
-        !amountOfPacksResponse.result ||
-        amountOfPacksResponse.result.status === Response.ERROR
-      ) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: amountOfPacksResponse?.result.message,
-          },
-        };
-      }
-
-      // Return random cards
-      return {
-        result: {
-          status: Response.SUCCESS,
-          newUserCards,
-          amountOfPacks: amountOfPacksResponse.result.amountOfPacks,
-        },
-      };
-    });
+      },
+      {
+        maxWait: 5000,
+        timeout: 10000,
+      },
+    );
   } catch (error: unknown) {
+    console.error('**TRPC ERROR**', error);
+
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       const message = CommonError.InvalidInput;

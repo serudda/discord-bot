@@ -2,12 +2,20 @@ import type { Card, UserCard } from '@discord-bot/db';
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '~/api';
 import { BG_IMG_URL, FOIL_IMG_URL, RESULT_IMG_NAME } from '~/common';
+import { openPackCollector } from '~/events/collectors';
 import { openPackMsg } from '~/messages';
 import { formatMsg, mergeImages } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
-import { AttachmentBuilder, SlashCommandBuilder, type CommandInteraction } from 'discord.js';
+import {
+  ActionRowBuilder,
+  AttachmentBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  SlashCommandBuilder,
+  type CommandInteraction,
+} from 'discord.js';
 
-interface UserCardWithCard extends UserCard {
+export interface UserCardWithCard extends UserCard {
   card: Card;
 }
 
@@ -54,7 +62,19 @@ const command = {
         packs,
         url: `${process.env.WEB_URL}/${userId}/collection/`,
       });
-      await interaction.editReply({ files: [attachment], content: msg });
+
+      // Create a button
+      const button = new ButtonBuilder()
+        .setCustomId('get-random-card')
+        .setLabel('Obtener una de estas cartas al azar y por suerte la que yo quiera')
+        .setStyle(ButtonStyle.Primary);
+
+      const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+      await interaction.editReply({ files: [attachment], content: msg, components: [actionRow] });
+
+      // Trigger the button collector
+      openPackCollector({ interaction, cards });
     } catch (error) {
       console.error('Error opening a pack', error);
       if (error instanceof TRPCClientError) await interaction.editReply(error);

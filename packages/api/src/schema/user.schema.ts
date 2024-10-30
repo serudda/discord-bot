@@ -83,6 +83,37 @@ export type DecreaseUserCoinsInputType = TypeOf<typeof decreaseUserCoinsInput>;
 
 /*------------------------------------*/
 
+export const getUserGemsInput = z.object({
+  discordId: z.string(),
+});
+export type GetUserGemsInputType = TypeOf<typeof getUserGemsInput>;
+
+/*------------------------------------*/
+
+export const increaseUserGemsInput = z.object({
+  discordId: z.string(),
+  gems: z.number(),
+});
+export type IncreaseUserGemsInputType = TypeOf<typeof increaseUserGemsInput>;
+
+/*------------------------------------*/
+
+export const decreaseUserGemsInput = z.object({
+  discordId: z.string(),
+  gems: z.number(),
+});
+export type DecreaseUserGemsInputType = TypeOf<typeof decreaseUserGemsInput>;
+
+/*------------------------------------*/
+
+export const updateUserGemsInput = z.object({
+  discordId: z.string(),
+  gems: z.number(),
+});
+export type UpdateUserGemsInputType = TypeOf<typeof updateUserGemsInput>;
+
+/*------------------------------------*/
+
 export const getUserSeasonProgressInput = z.object({
   seasonId: z.string(),
   userId: z.string(),

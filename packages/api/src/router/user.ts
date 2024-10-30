@@ -1,26 +1,32 @@
 import {
   createUserHandler,
   decreaseUserCoinsHandler,
+  decreaseUserGemsHandler,
   getUserByDiscordIdHandler,
   getUserByEmailHandler,
   getUserByIdHandler,
   getUserByUsernameHandler,
   getUserCoinsHandler,
+  getUserGemsHandler,
   getUserSeasonProgressHandler,
   increaseUserCoinsHandler,
+  increaseUserGemsHandler,
   registerUserHandler,
   updateUserCoinsHandler,
 } from '../controllers/user.controller';
 import {
   createUserInput,
   decreaseUserCoinsInput,
+  decreaseUserGemsInput,
   getUserByDiscordIdInput,
   getUserByEmailInput,
   getUserByIdInput,
   getUserByUsernameInput,
   getUserCoinsInput,
+  getUserGemsInput,
   getUserSeasonProgressInput,
   increaseUserCoinsInput,
+  increaseUserGemsInput,
   registerUserInput,
   updateUserCoinsInput,
 } from '../schema/user.schema';
@@ -66,4 +72,14 @@ export const userRouter = createTRPCRouter({
   getUserSeasonProgress: publicProcedure
     .input(getUserSeasonProgressInput)
     .query(async ({ ctx, input }) => getUserSeasonProgressHandler({ ctx, input })),
+
+  getGems: publicProcedure.input(getUserGemsInput).query(async ({ ctx, input }) => getUserGemsHandler({ ctx, input })),
+
+  increaseGems: publicProcedure
+    .input(increaseUserGemsInput)
+    .mutation(async ({ ctx, input }) => increaseUserGemsHandler({ ctx, input })),
+
+  decreaseGems: publicProcedure
+    .input(decreaseUserGemsInput)
+    .mutation(async ({ ctx, input }) => decreaseUserGemsHandler({ ctx, input })),
 });
