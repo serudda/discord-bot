@@ -22,13 +22,29 @@ export const wonderPickButtonId = 'wonder-pick-button';
 export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): void => {
   const buttonCollector = (interaction.channel as TextChannel)?.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    filter: (i: ButtonInteraction) => i.customId === wonderPickButtonId,
+    filter: (i: ButtonInteraction) => {
+      if (i.customId !== wonderPickButtonId) return false;
+
+      if (i.user.id === interaction.user.id) {
+        void i.reply({
+          content: 'Ya tu obtuviste tus cartas. El wonder pick de este sobre, solo puede ser usado por otros usuarios.',
+          ephemeral: true,
+        });
+        return false;
+      }
+
+      return true;
+    },
   });
 
   buttonCollector?.on('collect', (buttonInteraction: ButtonInteraction) => {
     void (async () => {
       try {
         await buttonInteraction.deferReply({ ephemeral: true });
+
+        // Create a Discord attachment and send the image
+        const buffer = await getImage(WONDER_PICK_IMG_URL);
+        const attachment = new AttachmentBuilder(buffer, { name: WONDER_PICK_IMG_URL });
 
         // Create the Select Menu
         const selectMenu = new StringSelectMenuBuilder()
@@ -50,10 +66,6 @@ export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): voi
           ]);
 
         const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
-
-        // Create a Discord attachment and send the image
-        const buffer = await getImage(WONDER_PICK_IMG_URL);
-        const attachment = new AttachmentBuilder(buffer, { name: WONDER_PICK_IMG_URL });
 
         await buttonInteraction.editReply({
           files: [attachment],

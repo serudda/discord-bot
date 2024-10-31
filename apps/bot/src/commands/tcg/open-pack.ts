@@ -1,7 +1,7 @@
 import type { Card, UserCard } from '@discord-bot/db';
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '~/api';
-import { BG_IMG_URL, FOIL_IMG_URL, RESULT_IMG_NAME } from '~/common';
+import { BG_IMG_URL, FOIL_IMG_URL, RESULT_OPEN_PACK_IMG_NAME } from '~/common';
 import { wonderPickButton, wonderPickButtonId } from '~/events/collectors';
 import { openPackMsg } from '~/messages';
 import { formatMsg, mergeImages } from '~/utils';
@@ -55,7 +55,7 @@ const command = {
       const buffer = await mergeImages(imageUrls, foilFlags, FOIL_IMG_URL, BG_IMG_URL);
 
       // Create a Discord attachment and send the image
-      const attachment = new AttachmentBuilder(buffer, { name: RESULT_IMG_NAME });
+      const attachment = new AttachmentBuilder(buffer, { name: RESULT_OPEN_PACK_IMG_NAME });
 
       const msg = formatMsg(openPackMsg.description, {
         discordId,

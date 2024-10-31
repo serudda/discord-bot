@@ -1,4 +1,5 @@
-import { getImage } from '~/utils';
+import { BACK_IMG_URL, BG_IMG_URL, FOIL_IMG_URL, RESULT_WONDER_PICK_IMG_NAME } from '~/common';
+import { mergeImages } from '~/utils';
 import type { UserCardWithCard } from '../../commands/tcg/open-pack';
 import type { ButtonInteraction, SelectMenuInteraction, StringSelectMenuInteraction, TextChannel } from 'discord.js';
 import { AttachmentBuilder, ComponentType } from 'discord.js';
@@ -25,10 +26,6 @@ export const wonderPickSelect = ({ interaction, cards }: WonderPickSelectOptions
         const selectedCardIndex = parseInt(selectedValue, 10) - 1; // Convertir a índice
         const selectedCard = cards[selectedCardIndex];
 
-        console.log('** selectedCard **', selectedCard);
-        console.log('** selectedCardIndex **', selectedCardIndex);
-        console.log('** selectedValue **', selectedValue);
-
         if (!selectedCard) {
           await selectInteraction.editReply({
             content: 'La carta seleccionada no está disponible.',
@@ -36,16 +33,22 @@ export const wonderPickSelect = ({ interaction, cards }: WonderPickSelectOptions
           return;
         }
 
-        // Enviar la carta seleccionada al usuario
-        const cardImageBuffer = await getImage(selectedCard.card.image);
-        // console.log('** cardImageBuffer **', cardImageBuffer);
-        const cardAttachment = new AttachmentBuilder(cardImageBuffer, { name: 'selected-card.png' });
+        const totalCards = cards.length;
+        const imageUrls: Array<string> = [];
+        const foilFlags: Array<boolean> = [];
 
-        //console.log('** cardAttachment **', cardAttachment);
+        for (let i = 0; i < totalCards; i++) {
+          imageUrls.push(i === selectedCardIndex ? selectedCard.card.image : BACK_IMG_URL);
+          foilFlags.push(i === selectedCardIndex ? selectedCard.isFoil : false);
+        }
+
+        // Convert the image to buffer
+        const buffer = await mergeImages(imageUrls, foilFlags, FOIL_IMG_URL, BG_IMG_URL);
+        const attachment = new AttachmentBuilder(buffer, { name: RESULT_WONDER_PICK_IMG_NAME });
 
         await selectInteraction.editReply({
           content: `¡Has seleccionado la carta número ${selectedValue}! Es **${selectedCard.card.name}**.`,
-          files: [cardAttachment],
+          files: [attachment],
           components: [],
         });
       } catch (error) {
@@ -57,14 +60,33 @@ export const wonderPickSelect = ({ interaction, cards }: WonderPickSelectOptions
     })();
   });
 
-  selectCollector?.on('end', (collected) => {
-    if (collected.size === 0) {
-      interaction
-        .editReply({
-          content: 'No seleccionaste ninguna carta.',
-          components: [],
-        })
-        .catch((error) => console.error('Error al editar el mensaje:', error));
-    }
+  selectCollector?.on('end', () => {
+    void (async (collected) => {
+      if (collected.size === 0) {
+        try {
+          // If the interaction has not been replied to, we can use reply()
+          if (!interaction.ephemeral && !interaction.deferred && !interaction.replied) {
+            await interaction.reply({
+              content: 'No seleccionaste ninguna carta.',
+              ephemeral: true,
+            });
+            // If the interaction was deferred but not replied to, we can use editReply()
+          } else if (interaction.deferred && !interaction.replied) {
+            await interaction.editReply({
+              content: 'No seleccionaste ninguna carta.',
+              components: [],
+            });
+            // If the interaction has been replied to, we use followUp()
+          } else {
+            await interaction.followUp({
+              content: 'No seleccionaste ninguna carta.',
+              ephemeral: true,
+            });
+          }
+        } catch (error) {
+          console.error('Error al enviar mensaje al usuario:', error);
+        }
+      }
+    })(selectCollector?.collected);
   });
 };
