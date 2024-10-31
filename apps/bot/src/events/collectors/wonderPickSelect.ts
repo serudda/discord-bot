@@ -1,11 +1,11 @@
 import { BACK_IMG_URL, BG_IMG_URL, FOIL_IMG_URL, RESULT_WONDER_PICK_IMG_NAME } from '~/common';
 import { mergeImages } from '~/utils';
 import type { UserCardWithCard } from '../../commands/tcg/open-pack';
-import type { ButtonInteraction, SelectMenuInteraction, StringSelectMenuInteraction, TextChannel } from 'discord.js';
+import type { ButtonInteraction, StringSelectMenuInteraction, TextChannel } from 'discord.js';
 import { AttachmentBuilder, ComponentType } from 'discord.js';
 
 interface WonderPickSelectOptions {
-  interaction: ButtonInteraction | SelectMenuInteraction;
+  interaction: ButtonInteraction | StringSelectMenuInteraction;
   cards: Array<UserCardWithCard>;
 }
 
@@ -22,8 +22,8 @@ export const wonderPickSelect = ({ interaction, cards }: WonderPickSelectOptions
       try {
         await selectInteraction.deferReply({ ephemeral: true });
 
-        const selectedValue = selectInteraction.values[0] as string; // '1', '2', '3'
-        const selectedCardIndex = parseInt(selectedValue, 10) - 1; // Convertir a índice
+        const selectedValue = selectInteraction.values[0] as string;
+        const selectedCardIndex = parseInt(selectedValue, 10) - 1;
         const selectedCard = cards[selectedCardIndex];
 
         if (!selectedCard) {

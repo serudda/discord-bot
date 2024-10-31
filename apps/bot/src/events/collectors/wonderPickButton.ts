@@ -1,3 +1,5 @@
+import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
+import { api, Response } from '~/api';
 import { getImage } from '~/utils';
 import { type UserCardWithCard } from '../../commands/tcg/open-pack';
 import { WONDER_PICK_IMG_URL } from '../../common/constants/cardImage';
@@ -41,6 +43,24 @@ export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): voi
     void (async () => {
       try {
         await buttonInteraction.deferReply({ ephemeral: true });
+        const discordId = buttonInteraction.user.id;
+
+        // Get user gems
+        const userGemsResponse = await api.user.getGems.query({ discordId });
+        if (!userGemsResponse?.result || userGemsResponse?.result?.status === Response.ERROR) {
+          await buttonInteraction.editReply(ErrorMessages[userGemsResponse?.result.message as ErrorCode]);
+          return;
+        }
+
+        const userGems = userGemsResponse?.result.gems as number;
+
+        // Check if user has enough gems
+        if (userGems < 1) {
+          await buttonInteraction.editReply({
+            content: 'No tienes suficientes gemas para realizar este wonder pick.',
+          });
+          return;
+        }
 
         // Create a Discord attachment and send the image
         const buffer = await getImage(WONDER_PICK_IMG_URL);
