@@ -24,28 +24,27 @@ export const wonderPickButtonId = 'wonder-pick-button';
 export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): void => {
   const buttonCollector = (interaction.channel as TextChannel)?.createMessageComponentCollector({
     componentType: ComponentType.Button,
-    filter: (i: ButtonInteraction) => {
-      if (i.customId !== wonderPickButtonId) return false;
-
-      if (i.user.id === interaction.user.id) {
-        void i.reply({
-          content: 'Ya tu obtuviste tus cartas. El wonder pick de este sobre, solo puede ser usado por otros usuarios.',
-          ephemeral: true,
-        });
-        return false;
-      }
-
-      return true;
-    },
+    time: 900000, // 15 minutes
+    filter: (i: ButtonInteraction) => i.customId === wonderPickButtonId,
   });
 
   buttonCollector?.on('collect', (buttonInteraction: ButtonInteraction) => {
     void (async () => {
       try {
+        // Verify if the user is the same one who opened the pack
+        if (buttonInteraction.user.id === interaction.user.id) {
+          await buttonInteraction.reply({
+            content:
+              'Ya tú obtuviste tus cartas. El wonder pick de este sobre solo puede ser usado por otros usuarios.',
+            ephemeral: true,
+          });
+          return;
+        }
+
         await buttonInteraction.deferReply({ ephemeral: true });
-        const discordId = buttonInteraction.user.id;
 
         // Get user gems
+        const discordId = buttonInteraction.user.id;
         const userGemsResponse = await api.user.getGems.query({ discordId });
         if (!userGemsResponse?.result || userGemsResponse?.result?.status === Response.ERROR) {
           await buttonInteraction.editReply(ErrorMessages[userGemsResponse?.result.message as ErrorCode]);
@@ -97,10 +96,17 @@ export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): voi
         wonderPickSelect({ interaction: buttonInteraction, cards });
       } catch (error) {
         console.error('Error en el handler de "collect" de wonderPick:', error);
-        await buttonInteraction.editReply({
-          content: 'Ocurrió un error al procesar tu interacción.',
-          components: [],
-        });
+        if (buttonInteraction.deferred || buttonInteraction.replied) {
+          await buttonInteraction.editReply({
+            content: 'Ocurrió un error al procesar tu interacción.',
+            components: [],
+          });
+        } else {
+          await buttonInteraction.reply({
+            content: 'Ocurrió un error al procesar tu interacción.',
+            ephemeral: true,
+          });
+        }
       }
     })();
   });
@@ -113,7 +119,7 @@ export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): voi
             new ActionRowBuilder<ButtonBuilder>().addComponents(
               new ButtonBuilder()
                 .setCustomId(wonderPickButtonId)
-                .setLabel('Ya no se puede obtener una carta')
+                .setLabel('Este wonder pick ha expirado')
                 .setStyle(ButtonStyle.Primary)
                 .setDisabled(true),
             ),
