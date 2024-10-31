@@ -1,3 +1,6 @@
+import type { ErrorCode } from '@discord-bot/error-handler';
+import { ErrorMessages } from '@discord-bot/error-handler';
+import { api, Response } from '~/api';
 import { BACK_IMG_URL, BG_IMG_URL, FOIL_IMG_URL, RESULT_WONDER_PICK_IMG_NAME } from '~/common';
 import { mergeImages } from '~/utils';
 import type { UserCardWithCard } from '../../commands/tcg/open-pack';
@@ -6,12 +9,12 @@ import { AttachmentBuilder, ComponentType } from 'discord.js';
 
 interface WonderPickSelectOptions {
   interaction: ButtonInteraction | StringSelectMenuInteraction;
-  cards: Array<UserCardWithCard>;
+  userCards: Array<UserCardWithCard>;
 }
 
 export const wonderPickSelectId = 'wonder-pick-select';
 
-export const wonderPickSelect = ({ interaction, cards }: WonderPickSelectOptions): void => {
+export const wonderPickSelect = ({ interaction, userCards }: WonderPickSelectOptions): void => {
   const selectCollector = (interaction.channel as TextChannel)?.createMessageComponentCollector({
     componentType: ComponentType.StringSelect,
     filter: (i: StringSelectMenuInteraction) => i.customId === wonderPickSelectId && i.user.id === interaction.user.id,
@@ -20,34 +23,46 @@ export const wonderPickSelect = ({ interaction, cards }: WonderPickSelectOptions
   selectCollector?.on('collect', (selectInteraction: StringSelectMenuInteraction) => {
     void (async () => {
       try {
+        const discordId = interaction.user.id;
+        const selectedValue = selectInteraction.values[0] as string;
         await selectInteraction.deferReply({ ephemeral: true });
 
-        const selectedValue = selectInteraction.values[0] as string;
-        const selectedCardIndex = parseInt(selectedValue, 10) - 1;
-        const selectedCard = cards[selectedCardIndex];
+        // Run the wonder pick user action
+        const wonderPickResponse = await api.card.wonderPick.mutate({
+          discordId,
+          position: selectedValue,
+          cards: userCards.map((userCard) => userCard.card.id),
+        });
 
-        if (!selectedCard) {
+        // Check if the wonder pick failed
+        if (!wonderPickResponse?.result || wonderPickResponse?.result?.status === Response.ERROR) {
+          await selectInteraction.editReply(ErrorMessages[wonderPickResponse?.result?.message as ErrorCode]);
+          return;
+        }
+
+        const selectedUserCard = wonderPickResponse?.result.userCard;
+        if (!selectedUserCard) {
           await selectInteraction.editReply({
             content: 'La carta seleccionada no está disponible.',
           });
           return;
         }
 
-        const totalCards = cards.length;
         const imageUrls: Array<string> = [];
         const foilFlags: Array<boolean> = [];
 
-        for (let i = 0; i < totalCards; i++) {
-          imageUrls.push(i === selectedCardIndex ? selectedCard.card.image : BACK_IMG_URL);
-          foilFlags.push(i === selectedCardIndex ? selectedCard.isFoil : false);
-        }
+        // Create the image and foil flags arrays
+        userCards.forEach((userCard) => {
+          imageUrls.push(userCard.card.id === selectedUserCard.card.id ? selectedUserCard.card.image : BACK_IMG_URL);
+          foilFlags.push(userCard.card.id === selectedUserCard.card.id ? selectedUserCard.isFoil : false);
+        });
 
         // Convert the image to buffer
         const buffer = await mergeImages(imageUrls, foilFlags, FOIL_IMG_URL, BG_IMG_URL);
         const attachment = new AttachmentBuilder(buffer, { name: RESULT_WONDER_PICK_IMG_NAME });
 
         await selectInteraction.editReply({
-          content: `¡Has seleccionado la carta número ${selectedValue}! Es **${selectedCard.card.name}**.`,
+          content: `¡Has seleccionado la carta número ${selectedValue}! Es **${selectedUserCard.card.name}**.`,
           files: [attachment],
           components: [],
         });

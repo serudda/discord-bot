@@ -16,12 +16,12 @@ import {
 
 interface WonderPickOptions {
   interaction: CommandInteraction;
-  cards: Array<UserCardWithCard>;
+  userCards: Array<UserCardWithCard>;
 }
 
 export const wonderPickButtonId = 'wonder-pick-button';
 
-export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): void => {
+export const wonderPickButton = ({ interaction, userCards }: WonderPickOptions): void => {
   const buttonCollector = (interaction.channel as TextChannel)?.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 900000, // 15 minutes
@@ -88,12 +88,12 @@ export const wonderPickButton = ({ interaction, cards }: WonderPickOptions): voi
 
         await buttonInteraction.editReply({
           files: [attachment],
-          content: 'Selecciona una posición',
+          content: 'Hemos barajado las cartas. Escoge una posición:',
           components: [actionRow],
         });
 
         // Trigger the select menu collector
-        wonderPickSelect({ interaction: buttonInteraction, cards });
+        wonderPickSelect({ interaction: buttonInteraction, userCards });
       } catch (error) {
         console.error('Error en el handler de "collect" de wonderPick:', error);
         if (buttonInteraction.deferred || buttonInteraction.replied) {

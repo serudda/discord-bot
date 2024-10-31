@@ -36,7 +36,11 @@ import { z } from 'zod';
 export const getCardByIdHandler = async ({ ctx, input }: Params<GetCardByIdInputType>) => {
   try {
     const { id } = input;
+
+    console.log('*** id ***', id);
     const card = await ctx.prisma.card.findUnique({ where: { id } });
+
+    console.log('*** card ***', card);
 
     // Check if card was found
     if (!card) {
@@ -882,7 +886,9 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
  */
 export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputType>) => {
   try {
-    const { discordId, cards } = input;
+    const { discordId, position, cards } = input;
+
+    console.log('wonderPickHandler', { discordId, position, cards });
     const GEMS_COST = await ctx.configService.getGlobalConfig<number>('GEM_COST_TO_GET_RANDOM_CARD', 1);
 
     if (!cards || cards.length === 0) {
@@ -914,13 +920,22 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
         }
 
         // Get random card from user pack
-        const randomCardId = cards[Math.floor(Math.random() * cards.length)];
+        const shuffledCards = cards.sort(() => Math.random() - 0.5);
+        const selectedCardIndex = parseInt(position, 10) - 1;
+        const selectedCard = shuffledCards[selectedCardIndex];
+
+        console.log('*** position ***', position);
+        console.log('*** shuffledCards ***', shuffledCards);
+        console.log('*** selectedCardIndex ***', selectedCardIndex);
+        console.log('*** selectedCard ***', selectedCard);
 
         // Get card by ID
         const cardResponse = await getCardByIdHandler({
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-          input: { id: randomCardId as string },
+          input: { id: selectedCard as string },
         });
+
+        console.log('*** cardResponse ***', cardResponse);
 
         // Check if card was found
         if (!cardResponse || !cardResponse.result || cardResponse.result.status === Response.ERROR) {
@@ -940,6 +955,8 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
           input: { userId, cardId: randomCard?.id as string, quantity: 1, isFoil: false },
         });
+
+        console.log('*** addCardToCollectionResponse ***', addCardToCollectionResponse);
 
         // Check if card was added to user collection
         if (
@@ -964,7 +981,7 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
         return {
           result: {
             status: Response.SUCCESS,
-            card: addCardToCollectionResponse.result.userCard,
+            userCard: addCardToCollectionResponse.result.userCard,
           },
         };
       },

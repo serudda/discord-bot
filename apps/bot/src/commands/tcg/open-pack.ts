@@ -34,6 +34,7 @@ const command = {
       }
 
       const userId = userResponse?.result.user?.id as string;
+      const username = userResponse?.result.user?.username as string;
       const openPackResponse = await api.pack.openPack.mutate({ userId });
 
       if (openPackResponse?.result?.status === Response.ERROR) {
@@ -41,12 +42,12 @@ const command = {
         return;
       }
 
-      const cards = openPackResponse?.result?.newUserCards as Array<UserCardWithCard>;
+      const userCards = openPackResponse?.result?.newUserCards as Array<UserCardWithCard>;
       const packs = openPackResponse?.result?.amountOfPacks as number;
       const imageUrls: Array<string> = [];
       const foilFlags: Array<boolean> = [];
 
-      cards.forEach((userCard?: UserCardWithCard) => {
+      userCards.forEach((userCard?: UserCardWithCard) => {
         imageUrls.push(userCard?.card.image as string);
         foilFlags.push(userCard?.isFoil ?? false);
       });
@@ -60,7 +61,7 @@ const command = {
       const msg = formatMsg(openPackMsg.description, {
         discordId,
         packs,
-        url: `${process.env.WEB_URL}/${userId}/collection/`,
+        url: `${process.env.WEB_URL}/${username}/collection/`,
       });
 
       // Create a button
@@ -74,7 +75,7 @@ const command = {
       await interaction.editReply({ files: [attachment], content: msg, components: [actionRow] });
 
       // Trigger the button collector
-      wonderPickButton({ interaction, cards });
+      wonderPickButton({ interaction, userCards });
     } catch (error) {
       console.error('Error opening a pack', error);
       if (error instanceof TRPCClientError) await interaction.editReply(error);

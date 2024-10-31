@@ -67,6 +67,7 @@ export type GetRandomCardByRarityInputType = TypeOf<typeof getRandomCardByRarity
 
 export const wonderPickInput = z.object({
   discordId: z.string(),
+  position: z.string(),
   cards: z.array(z.string()),
 });
 export type WonderPickInputType = TypeOf<typeof wonderPickInput>;
