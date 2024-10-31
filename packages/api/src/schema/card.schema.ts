@@ -65,11 +65,11 @@ export type GetRandomCardByRarityInputType = TypeOf<typeof getRandomCardByRarity
 
 /*------------------------------------*/
 
-export const getRandomCardFromUserPackInput = z.object({
+export const wonderPickInput = z.object({
   discordId: z.string(),
   cards: z.array(z.string()),
 });
-export type GetRandomCardFromUserPackInputType = TypeOf<typeof getRandomCardFromUserPackInput>;
+export type WonderPickInputType = TypeOf<typeof wonderPickInput>;
 
 /*------------------------------------*/
 

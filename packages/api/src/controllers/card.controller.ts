@@ -11,11 +11,11 @@ import {
   type GetCardsBySeasonAndUserIdInputType,
   type GetCardsBySeasonInputType,
   type GetRandomCardByRarityInputType,
-  type GetRandomCardFromUserPackInputType,
   type GetRandomCardsInputType,
   type GetUserCollectionInputType,
   type GiveCoinsInputType,
   type SetCoinsInputType,
+  type WonderPickInputType,
 } from '../schema/card.schema';
 import {
   decreaseUserGemsHandler,
@@ -872,13 +872,15 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
 };
 
 /**
- * Get random card from user pack.
+ * User can get one of the cards (chosen randomly) from a
+ * booster pack that was opened by another user. NOTE: That
+ * player will not lose any cards.
  *
  * @param ctx Ctx.
- * @param input GetRandomCardFromUserPackInputType.
- * @returns Random card from user pack.
+ * @param input WonderPickInputType.
+ * @returns Random Card got by wonder pick.
  */
-export const addRandomCardFromUserPackHandler = async ({ ctx, input }: Params<GetRandomCardFromUserPackInputType>) => {
+export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputType>) => {
   try {
     const { discordId, cards } = input;
     const GEMS_COST = await ctx.configService.getGlobalConfig<number>('GEM_COST_TO_GET_RANDOM_CARD', 1);

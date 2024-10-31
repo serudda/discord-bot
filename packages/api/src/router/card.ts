@@ -1,6 +1,5 @@
 import {
   addCardToCollectionHandler,
-  addRandomCardFromUserPackHandler,
   createCardHandler,
   getAllCardsByRarityHandler,
   getAllCardsHandler,
@@ -12,6 +11,7 @@ import {
   getUserCollectionHandler,
   giveCoinsHandler,
   setCoinsHandler,
+  wonderPickHandler,
 } from '../controllers/card.controller';
 import {
   addCardToCollectionInput,
@@ -22,11 +22,11 @@ import {
   getCardsBySeasonAndUserIdInput,
   getCardsBySeasonInput,
   getRandomCardByRarityInput,
-  getRandomCardFromUserPackInput,
   getRandomCardsInput,
   getUserCollectionInput,
   giveCoinsInput,
   setCoinsInput,
+  wonderPickInput,
 } from '../schema/card.schema';
 import { createTRPCRouter, publicProcedure } from '../trpc';
 
@@ -34,9 +34,6 @@ export const cardRouter = createTRPCRouter({
   addCardToCollection: publicProcedure
     .input(addCardToCollectionInput)
     .mutation(async ({ ctx, input }) => addCardToCollectionHandler({ ctx, input })),
-  addRandomCardFromUserPack: publicProcedure
-    .input(getRandomCardFromUserPackInput)
-    .mutation(async ({ ctx, input }) => addRandomCardFromUserPackHandler({ ctx, input })),
   getAllCards: publicProcedure
     .input(getAllCardsInput)
     .query(async ({ ctx, input }) => getAllCardsHandler({ ctx, input })),
@@ -66,4 +63,7 @@ export const cardRouter = createTRPCRouter({
   getCardsBySeasonAndUserId: publicProcedure
     .input(getCardsBySeasonAndUserIdInput)
     .query(async ({ ctx, input }) => getCardsBySeasonAndUserIdHandler({ ctx, input })),
+  wonderPick: publicProcedure
+    .input(wonderPickInput)
+    .mutation(async ({ ctx, input }) => wonderPickHandler({ ctx, input })),
 });
