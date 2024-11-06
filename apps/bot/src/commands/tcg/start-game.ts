@@ -41,8 +41,10 @@ const command = {
 
       if (response?.result && response.result.coins) {
         const coins = response?.result.coins;
+        const gems = response?.result.gems;
         const msg = formatMsg(startGameMsg.description, {
           coins,
+          gems,
         });
         await interaction.editReply(msg);
         return;

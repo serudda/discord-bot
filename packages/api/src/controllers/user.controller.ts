@@ -221,7 +221,7 @@ export const getUserByUsernameHandler = async ({ ctx, input }: Params<GetUserByU
  */
 export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputType>) => {
   try {
-    const { name, username, email, image, coins } = input;
+    const { name, username, email, image, coins, gems } = input;
 
     const user = await ctx.prisma.user.create({
       data: {
@@ -230,6 +230,7 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
         image,
         email,
         coins,
+        gems,
       },
     });
 
@@ -299,6 +300,7 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
   try {
     const { discordId, email, name, username, image } = input;
     const INIT_COINS = await ctx.configService.getGlobalConfig<number>('INIT_COINS', 500);
+    const INIT_GEMS = await ctx.configService.getGlobalConfig<number>('INIT_GEMS', 5);
 
     return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Check if user already exists
@@ -325,6 +327,7 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
           email,
           image,
           coins: INIT_COINS,
+          gems: INIT_GEMS,
         },
       });
 
@@ -364,6 +367,7 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
           status: Response.SUCCESS,
           name: newUser?.result?.user?.name,
           coins: newUser?.result?.user?.coins,
+          gems: newUser?.result?.user?.gems,
         },
       };
     });
