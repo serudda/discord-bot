@@ -1,5 +1,5 @@
 import { ErrorMessages, UserError, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '~/api';
+import { api, configService, Response } from '~/api';
 import { startGameMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
@@ -42,9 +42,13 @@ const command = {
       if (response?.result && response.result.coins) {
         const coins = response?.result.coins;
         const gems = response?.result.gems;
+        const coinEmoji = await configService.getGlobalConfig<string>('COIN_EMOJI', ':coin:');
+        const gemEmoji = await configService.getGlobalConfig<string>('GEM_EMOJI', ':gem:');
         const msg = formatMsg(startGameMsg.description, {
           coins,
+          coinEmoji,
           gems,
+          gemEmoji,
         });
         await interaction.editReply(msg);
         return;
