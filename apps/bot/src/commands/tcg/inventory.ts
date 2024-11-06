@@ -1,12 +1,12 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, configService, Response } from '~/api';
-import { walletMsg } from '~/messages';
+import { inventoryMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
 const command = {
-  data: new SlashCommandBuilder().setName('wallet').setDescription('Ver la cantidad de monedas que tienes'),
+  data: new SlashCommandBuilder().setName('inventory').setDescription('Ver que tienes en tu inventario'),
   execute: async (interaction: CommandInteraction) => {
     const discordId = interaction.user.id;
 
@@ -35,7 +35,7 @@ const command = {
       const coinEmoji = await configService.getGlobalConfig<string>('COIN_EMOJI', ':coin:');
       const gemEmoji = await configService.getGlobalConfig<string>('GEM_EMOJI', ':gem:');
       const boosterEmoji = await configService.getGlobalConfig<string>('BOOSTER_EMOJI', ':booster:');
-      const msg = formatMsg(walletMsg.description, {
+      const msg = formatMsg(inventoryMsg.description, {
         userId: discordId,
         coins: response.result.coins,
         gems: response.result.gems,
@@ -46,7 +46,7 @@ const command = {
       });
       await interaction.editReply(msg);
     } catch (error) {
-      console.error('Error getting wallet:', error);
+      console.error('Error getting inventory:', error);
 
       if (error instanceof TRPCClientError) {
         if (error.message.includes('ECONNREFUSED')) {

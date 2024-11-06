@@ -18,7 +18,7 @@ export const startGameMsg: Message = {
       Estos son los comandos que puedes usar:
       - \`/buy-pack\` para comprar sobres de cartas.
       - \`/open-pack\` para abrir un sobre de cartas.
-      - \`/wallet\` para ver tu balance de monedas.
+      - \`/inventory\` para ver que tienes en tu inventario.
       - \`/collection\` para ver tu colección.
       - \`/give-coins\` para dar monedas a otro usuario.
       - \`/help\` para ver la lista de comandos y aprender a jugar.

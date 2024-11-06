@@ -1,7 +1,7 @@
 import type { Message } from '../../common';
 import dedent from 'dedent';
 
-export const walletMsg: Message = {
+export const inventoryMsg: Message = {
   title: 'Ver tu inventario',
   description: dedent`
       ============================================
