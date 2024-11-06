@@ -117,3 +117,12 @@ export const addCardToCollectionInput = z.object({
   isFoil: z.boolean().optional().default(false),
 });
 export type AddCardToCollectionInputType = TypeOf<typeof addCardToCollectionInput>;
+
+/*------------------------------------*/
+
+export const removeCardFromCollectionInput = z.object({
+  userId: z.string(),
+  cardId: z.string(),
+  quantity: z.number().optional().default(1),
+});
+export type RemoveCardFromCollectionInputType = TypeOf<typeof removeCardFromCollectionInput>;

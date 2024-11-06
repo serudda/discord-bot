@@ -10,6 +10,7 @@ import {
   getRandomCardsHandler,
   getUserCollectionHandler,
   giveCoinsHandler,
+  removeCardFromCollectionHandler,
   setCoinsHandler,
   wonderPickHandler,
 } from '../controllers/card.controller';
@@ -25,6 +26,7 @@ import {
   getRandomCardsInput,
   getUserCollectionInput,
   giveCoinsInput,
+  removeCardFromCollectionInput,
   setCoinsInput,
   wonderPickInput,
 } from '../schema/card.schema';
@@ -66,4 +68,7 @@ export const cardRouter = createTRPCRouter({
   wonderPick: publicProcedure
     .input(wonderPickInput)
     .mutation(async ({ ctx, input }) => wonderPickHandler({ ctx, input })),
+  removeCardFromCollection: publicProcedure
+    .input(removeCardFromCollectionInput)
+    .mutation(async ({ ctx, input }) => removeCardFromCollectionHandler({ ctx, input })),
 });

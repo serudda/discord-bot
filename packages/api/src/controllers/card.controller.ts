@@ -14,6 +14,7 @@ import {
   type GetRandomCardsInputType,
   type GetUserCollectionInputType,
   type GiveCoinsInputType,
+  type RemoveCardFromCollectionInputType,
   type SetCoinsInputType,
   type WonderPickInputType,
 } from '../schema/card.schema';
@@ -1160,11 +1161,23 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
   try {
     const { userId, cardId, quantity = 1, isFoil = false } = input;
 
+    // Get user
+    const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: userResponse?.result.message,
+        },
+      };
+    }
+
     // Add or update user card
+    const user = userResponse.result.user;
     const userCard = await ctx.prisma.userCard.upsert({
       where: {
         userId_cardId_isFoil: {
-          userId,
+          userId: user?.id as string,
           cardId,
           isFoil,
         },
@@ -1175,7 +1188,7 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
         },
       },
       create: {
-        userId,
+        userId: user?.id as string,
         cardId,
         isFoil,
         quantity,
@@ -1199,6 +1212,97 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
       result: {
         status: Response.SUCCESS,
         userCard,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Remove card from user collection.
+ *
+ * @param ctx Ctx.
+ * @param input RemoveCardFromCollectionInputType.
+ * @returns User's updated card.
+ */
+export const removeCardFromCollectionHandler = async ({ ctx, input }: Params<RemoveCardFromCollectionInputType>) => {
+  try {
+    const { userId, cardId, quantity = 1 } = input;
+
+    // Get user
+    const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: userResponse?.result.message,
+        },
+      };
+    }
+
+    // Get user card
+    const user = userResponse.result.user;
+    const userCard = await ctx.prisma.userCard.findFirst({
+      where: { userId: user?.id as string, cardId },
+    });
+    if (!userCard) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: CardError.CardNotFound,
+        },
+      };
+    }
+
+    // Calculate new quantity
+    const newQuantity = userCard.quantity - quantity;
+
+    // If new quantity is 0 or less, delete the record
+    if (newQuantity <= 0) {
+      const deletedUserCard = await ctx.prisma.userCard.delete({
+        where: { id: userCard.id },
+      });
+
+      return {
+        result: {
+          status: Response.SUCCESS,
+          userCard: deletedUserCard,
+        },
+      };
+    }
+
+    // Otherwise update the quantity
+    const updatedUserCard = await ctx.prisma.userCard.update({
+      where: { id: userCard.id },
+      data: { quantity: newQuantity },
+    });
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        userCard: updatedUserCard,
       },
     };
   } catch (error: unknown) {
