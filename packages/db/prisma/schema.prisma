@@ -37,7 +37,7 @@ enum Rarity {
 // @see https://next-auth.js.org/schemas/models
 
 model Config {
-    id        String   @id @default(cuid())
+    id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
     key       String   @unique
     value     String
     createdAt DateTime @default(now()) @map("created_at")
