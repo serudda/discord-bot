@@ -888,7 +888,6 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
   try {
     const { discordId, position, cards } = input;
 
-    console.log('wonderPickHandler', { discordId, position, cards });
     const GEMS_COST = await ctx.configService.getGlobalConfig<number>('GEM_COST_TO_GET_RANDOM_CARD', 1);
 
     if (!cards || cards.length === 0) {
@@ -924,18 +923,11 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
         const selectedCardIndex = parseInt(position, 10) - 1;
         const selectedCard = shuffledCards[selectedCardIndex];
 
-        console.log('*** position ***', position);
-        console.log('*** shuffledCards ***', shuffledCards);
-        console.log('*** selectedCardIndex ***', selectedCardIndex);
-        console.log('*** selectedCard ***', selectedCard);
-
         // Get card by ID
         const cardResponse = await getCardByIdHandler({
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
           input: { id: selectedCard as string },
         });
-
-        console.log('*** cardResponse ***', cardResponse);
 
         // Check if card was found
         if (!cardResponse || !cardResponse.result || cardResponse.result.status === Response.ERROR) {
@@ -956,8 +948,6 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
           input: { userId, cardId: randomCard?.id as string, quantity: 1, isFoil: false },
         });
 
-        console.log('*** addCardToCollectionResponse ***', addCardToCollectionResponse);
-
         // Check if card was added to user collection
         if (
           !addCardToCollectionResponse ||
@@ -975,7 +965,7 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
         // Decrease user gems
         await decreaseUserGemsHandler({
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-          input: { discordId: userId, gems: GEMS_COST },
+          input: { discordId, gems: GEMS_COST },
         });
 
         return {

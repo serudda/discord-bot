@@ -67,7 +67,7 @@ const command = {
       // Create a button
       const button = new ButtonBuilder()
         .setCustomId(wonderPickButtonId)
-        .setLabel('Obtener una de estas cartas al azar y por suerte la que yo quiera')
+        .setLabel('✨ Wonder Pick')
         .setStyle(ButtonStyle.Primary);
 
       const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
