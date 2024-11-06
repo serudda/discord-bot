@@ -11,6 +11,8 @@ import type {
   GetUserByUsernameInputType,
   GetUserCoinsInputType,
   GetUserGemsInputType,
+  GetUserInventoryInputType,
+  GetUserPacksInputType,
   GetUserSeasonProgressInputType,
   IncreaseUserCoinsInputType,
   IncreaseUserGemsInputType,
@@ -97,6 +99,7 @@ export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserBy
       },
       include: {
         accounts: true,
+        packs: true,
       },
     });
 
@@ -371,6 +374,123 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
         },
       };
     });
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get user packs.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserPacksInputType.
+ * @returns Packs.
+ */
+export const getUserPacksHandler = async ({ ctx, input }: Params<GetUserPacksInputType>) => {
+  try {
+    const { discordId } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({
+      ctx,
+      input: { discordId },
+    });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        packs: userResponse.result.user?.packs,
+      },
+    };
+  } catch (error: unknown) {
+    // Zod error (Invalid input)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: CommonError.InvalidInput,
+      });
+    }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: UserError.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+  }
+};
+
+/**
+ * Get user inventory.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserInventoryInputType.
+ * @returns Inventory.
+ */
+export const getUserInventoryHandler = async ({ ctx, input }: Params<GetUserInventoryInputType>) => {
+  try {
+    const { discordId } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+
+    // Check if user exists
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
+      return {
+        result: {
+          status: Response.ERROR,
+          message: UserError.UserNotFound,
+        },
+      };
+    }
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        packs: userResponse.result.user?.packs,
+        coins: userResponse.result.user?.coins,
+        gems: userResponse.result.user?.gems,
+      },
+    };
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {

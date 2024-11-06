@@ -1,5 +1,5 @@
 import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '~/api';
+import { api, configService, Response } from '~/api';
 import { walletMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
@@ -19,7 +19,7 @@ const command = {
         return;
       }
 
-      const response = await api.user.getCoins.query({ discordId });
+      const response = await api.user.getInventory.query({ discordId });
 
       if (response?.result.status === Response.ERROR) {
         await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
@@ -27,14 +27,22 @@ const command = {
       }
 
       // Check if user has coins
-      if (!response?.result || !response.result.coins) {
+      if (!response?.result || !response.result.coins || !response.result.gems || !response.result.packs) {
         await interaction.editReply(ErrorMessages.NoCoins);
         return;
       }
 
+      const coinEmoji = await configService.getGlobalConfig<string>('COIN_EMOJI', ':coin:');
+      const gemEmoji = await configService.getGlobalConfig<string>('GEM_EMOJI', ':gem:');
+      const boosterEmoji = await configService.getGlobalConfig<string>('BOOSTER_EMOJI', ':booster:');
       const msg = formatMsg(walletMsg.description, {
         userId: discordId,
         coins: response.result.coins,
+        gems: response.result.gems,
+        packs: response.result.packs.length,
+        coinEmoji,
+        gemEmoji,
+        boosterEmoji,
       });
       await interaction.editReply(msg);
     } catch (error) {

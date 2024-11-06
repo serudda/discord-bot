@@ -8,6 +8,8 @@ import {
   getUserByUsernameHandler,
   getUserCoinsHandler,
   getUserGemsHandler,
+  getUserInventoryHandler,
+  getUserPacksHandler,
   getUserSeasonProgressHandler,
   increaseUserCoinsHandler,
   increaseUserGemsHandler,
@@ -24,6 +26,8 @@ import {
   getUserByUsernameInput,
   getUserCoinsInput,
   getUserGemsInput,
+  getUserInventoryInput,
+  getUserPacksInput,
   getUserSeasonProgressInput,
   increaseUserCoinsInput,
   increaseUserGemsInput,
@@ -52,6 +56,14 @@ export const userRouter = createTRPCRouter({
   register: publicProcedure
     .input(registerUserInput)
     .mutation(async ({ ctx, input }) => registerUserHandler({ ctx, input })),
+
+  getPacks: publicProcedure
+    .input(getUserPacksInput)
+    .query(async ({ ctx, input }) => getUserPacksHandler({ ctx, input })),
+
+  getInventory: publicProcedure
+    .input(getUserInventoryInput)
+    .query(async ({ ctx, input }) => getUserInventoryHandler({ ctx, input })),
 
   getCoins: publicProcedure
     .input(getUserCoinsInput)

@@ -53,6 +53,20 @@ export type RegisterUserInputType = TypeOf<typeof registerUserInput>;
 
 /*------------------------------------*/
 
+export const getUserPacksInput = z.object({
+  discordId: z.string(),
+});
+export type GetUserPacksInputType = TypeOf<typeof getUserPacksInput>;
+
+/*------------------------------------*/
+
+export const getUserInventoryInput = z.object({
+  discordId: z.string(),
+});
+export type GetUserInventoryInputType = TypeOf<typeof getUserInventoryInput>;
+
+/*------------------------------------*/
+
 export const getUserCoinsInput = z.object({
   discordId: z.string(),
 });
