@@ -1,5 +1,20 @@
-import { CardError, CommonError, UserError } from '@discord-bot/error-handler';
-import { getRandomRarity, getSortingOptions, OrderBy, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
+import type { Card, UserCard } from '@discord-bot/db';
+import {
+  getRandomRarity,
+  getSortingOptions,
+  OrderBy,
+  Response,
+  TRPCErrorCode,
+  type CardCreateResponse,
+  type CardResponse,
+  type CardsResponse,
+  type Ctx,
+  type PackCardsResponse,
+  type Params,
+  type UserCardResponse,
+  type UserCardsResponse,
+  type UserCoinsResponse,
+} from '../common';
 import {
   type AddCardToCollectionInputType,
   type BuyPackInputType,
@@ -13,19 +28,25 @@ import {
   type GetRandomCardByRarityInputType,
   type GetRandomCardsInputType,
   type GetUserCollectionInputType,
+  type GiveCardInputType,
   type GiveCoinsInputType,
   type RemoveCardFromCollectionInputType,
   type SetCoinsInputType,
   type WonderPickInputType,
 } from '../schema/card.schema';
+import { ErrorCodes, ErrorMessages, errorResponse } from '../services';
 import {
   decreaseUserGemsHandler,
   getUserByDiscordIdHandler,
   getUserByIdHandler,
+  getUserCardByNumberHandler,
   getUserGemsHandler,
 } from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+// Id domain to handle errors
+const domain = 'CARD';
 
 /**
  * Get card by ID.
@@ -34,24 +55,13 @@ import { z } from 'zod';
  * @param input GetCardByIdInputType.
  * @returns Card.
  */
-export const getCardByIdHandler = async ({ ctx, input }: Params<GetCardByIdInputType>) => {
+export const getCardByIdHandler = async ({ ctx, input }: Params<GetCardByIdInputType>): Promise<CardResponse> => {
   try {
+    const handlerId = 'getCardByIdHandler';
     const { id } = input;
-
-    console.log('*** id ***', id);
     const card = await ctx.prisma.card.findUnique({ where: { id } });
 
-    console.log('*** card ***', card);
-
-    // Check if card was found
-    if (!card) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardNotFound,
-        },
-      };
-    }
+    if (!card) return errorResponse(domain, handlerId, ErrorCodes.Card.NoCard, ErrorMessages.Card.NoCard);
 
     return {
       result: {
@@ -60,20 +70,18 @@ export const getCardByIdHandler = async ({ ctx, input }: Params<GetCardByIdInput
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -82,6 +90,11 @@ export const getCardByIdHandler = async ({ ctx, input }: Params<GetCardByIdInput
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -91,8 +104,9 @@ export const getCardByIdHandler = async ({ ctx, input }: Params<GetCardByIdInput
  * @param ctx Ctx.
  * @param input CreateCardInputType.
  */
-export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputType>) => {
+export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputType>): Promise<CardCreateResponse> => {
   try {
+    const handlerId = 'createCardHandler';
     const { name, description, rarity, imageUrl } = input;
 
     // Create card
@@ -106,14 +120,7 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
     });
 
     // Check if card was created
-    if (!card) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.NoCreateCard,
-        },
-      };
-    }
+    if (!card) return errorResponse(domain, handlerId, ErrorCodes.Card.NoCreateCard, ErrorMessages.Card.NoCreateCard);
 
     return {
       result: {
@@ -126,7 +133,7 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
@@ -135,7 +142,7 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -144,6 +151,136 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
+  }
+};
+
+/**
+ * Give a card to a user.
+ *
+ * @param ctx Ctx.
+ * @param input GiveCardInputType.
+ * @returns User's card.
+ */
+export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>): Promise<UserCardResponse> => {
+  try {
+    const handlerId = 'giveCardHandler';
+    const { senderId, recipientId, cardNumber, isFoil } = input;
+
+    // Check if sender and recipient are the same
+    if (senderId === recipientId)
+      return errorResponse(
+        domain,
+        handlerId,
+        ErrorCodes.User.GiveCardRecipientEqualsSender,
+        ErrorMessages.User.GiveCardRecipientEqualsSender,
+      );
+
+    // Start transaction
+    return await ctx.prisma.$transaction(async (prismaTransaction) => {
+      // Get Sender user by Discord Id on Account table
+      const senderResponse = await getUserByDiscordIdHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { discordId: senderId },
+      });
+
+      if (senderResponse.result.status === Response.ERROR) return senderResponse as UserCardResponse;
+
+      // Get Recipient user by Discord Id on Account table
+      const recipientResponse = await getUserByDiscordIdHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { discordId: recipientId },
+      });
+
+      if (recipientResponse.result.status === Response.ERROR) return recipientResponse as UserCardResponse;
+
+      // Get sender's card
+      const sender = senderResponse.result.user;
+      const senderCardResponse = await getUserCardByNumberHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: { userId: sender.id, cardNumber, isFoil },
+      });
+
+      // Check if sender has the card
+      if (senderCardResponse?.result.status === Response.ERROR) return senderCardResponse;
+
+      // Check if sender has enough cards
+      const senderCard = senderCardResponse?.result.userCard;
+      if (senderCard && senderCard.quantity < 1)
+        return errorResponse(
+          domain,
+          handlerId,
+          ErrorCodes.Card.InsufficientCards,
+          ErrorMessages.Card.InsufficientCards,
+        );
+
+      // Remove card from sender's collection
+      const senderCardRemovedResponse = await removeCardFromCollectionHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: {
+          userId: sender.id,
+          cardId: senderCard?.cardId,
+          quantity: 1,
+          isFoil: senderCard?.isFoil,
+        },
+      });
+
+      // Check if card was removed from sender's collection
+      if (senderCardRemovedResponse?.result.status === Response.ERROR)
+        return senderCardRemovedResponse;
+
+      // Add card to recipient's collection
+      const recipient = recipientResponse.result.user;
+      const recipientCardResponse = await addCardToCollectionHandler({
+        ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+        input: {
+          userId: recipient.id,
+          cardId: senderCard?.cardId,
+          quantity: 1,
+          isFoil: senderCard?.isFoil,
+        },
+      });
+
+      // Check if card was added to recipient's collection
+      if (recipientCardResponse?.result.status === Response.ERROR) return recipientCardResponse;
+
+      return {
+        result: {
+          status: Response.SUCCESS,
+          userCard: recipientCardResponse?.result.userCard,
+        },
+      };
+    });
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
+    }
+
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -154,8 +291,9 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
  * @param input GiveCoinsInputType.
  * @returns User's coins.
  */
-export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType>) => {
+export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType>): Promise<UserCoinsResponse> => {
   try {
+    const handlerId = 'giveCoinsHandler';
     const { senderId, recipientId, amount } = input;
 
     // Start transaction
@@ -167,25 +305,12 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       });
 
       // Check if sender exists
-      if (!senderResponse || !senderResponse.result || senderResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: UserError.SenderNotFound,
-          },
-        };
-      }
+      if (senderResponse.result.status === Response.ERROR) return senderResponse as UserCoinsResponse;
 
       // Check if sender has enough coins
       const sender = senderResponse.result.user;
-      if (!sender || sender.coins < amount) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: CardError.NoCoinsToGive,
-          },
-        };
-      }
+      if (!sender || sender.coins < amount)
+        return errorResponse(domain, handlerId, ErrorCodes.Card.NoCoinsToGive, ErrorMessages.Card.NoCoinsToGive);
 
       // Get Recipient user by Discord Id on Account table
       const recipientResponse = await getUserByDiscordIdHandler({
@@ -194,14 +319,7 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       });
 
       // Check if recipient exists
-      if (!recipientResponse || !recipientResponse.result || recipientResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: UserError.ReceiverNotFound,
-          },
-        };
-      }
+      if (recipientResponse.result.status === Response.ERROR) return recipientResponse as UserCoinsResponse;
 
       // Decrease sender's coins
       const senderUpdated = await prismaTransaction.user.update({
@@ -216,14 +334,8 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       });
 
       // Check if sender's coins were updated
-      if (!senderUpdated) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: CardError.NoDecreaseCoins,
-          },
-        };
-      }
+      if (!senderUpdated)
+        return errorResponse(domain, handlerId, ErrorCodes.User.NoDecreaseCoins, ErrorMessages.User.NoDecreaseCoins);
 
       // Increase recipient's coins
       const recipient = recipientResponse.result.user;
@@ -239,14 +351,8 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       });
 
       // Check if recipient's coins were updated
-      if (!recepientUpdated) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: CardError.NoGiveCoins,
-          },
-        };
-      }
+      if (!recepientUpdated)
+        return errorResponse(domain, handlerId, ErrorCodes.User.NoGiveCoins, ErrorMessages.User.NoGiveCoins);
 
       return {
         result: {
@@ -256,20 +362,18 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
       };
     });
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -278,6 +382,11 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -288,22 +397,16 @@ export const giveCoinsHandler = async ({ ctx, input }: Params<GiveCoinsInputType
  * @param input SetCoinsInputType.
  * @returns User's coins.
  */
-export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>) => {
+export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>): Promise<UserCoinsResponse> => {
   try {
+    const handlerId = 'setCoinsHandler';
     const { discordId, amount } = input;
 
     // Get user by Discord Id on Account table
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR) return userResponse as UserCoinsResponse;
 
     // Increase user's coins
     const user = userResponse.result.user;
@@ -317,14 +420,8 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
     });
 
     // Check if user's coins were updated
-    if (!userUpdated) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.NoSetCoins,
-        },
-      };
-    }
+    if (!userUpdated)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoSetCoins, ErrorMessages.User.NoSetCoins);
 
     return {
       result: {
@@ -333,20 +430,18 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -355,6 +450,11 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -363,10 +463,11 @@ export const setCoinsHandler = async ({ ctx, input }: Params<SetCoinsInputType>)
  *
  * @param ctx Ctx.
  * @param input BuyPackInputType.
- * @returns Random Cards.
+ * @returns UserCardsResponse.
  */
-export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) => {
+export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>): Promise<UserCardsResponse> => {
   try {
+    const handlerId = 'buyPackHandler';
     const { discordId } = input;
     const PACK_PRICE = await ctx.configService.getGlobalConfig<number>('PACK_PRICE', 100);
     const CARD_AMOUNT_PACK = await ctx.configService.getGlobalConfig<number>('CARD_AMOUNT_PACK', 3);
@@ -381,25 +482,12 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if user exists
-      if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: userResponse?.result.message,
-          },
-        };
-      }
+      if (userResponse.result.status === Response.ERROR) return userResponse as UserCardsResponse;
 
       // Check if user has enough coins
       const user = userResponse.result.user;
-      if (!user || user.coins < PACK_PRICE) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: UserError.NoCoins,
-          },
-        };
-      }
+      if (!user || user.coins < PACK_PRICE)
+        return errorResponse(domain, handlerId, ErrorCodes.User.NoCoins, ErrorMessages.User.NoCoins);
 
       // Get random cards
       const randomCardsResponse = await getRandomCardsHandler({
@@ -410,70 +498,45 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if cards were selected
-      if (
-        !randomCardsResponse ||
-        !randomCardsResponse.result ||
-        !randomCardsResponse.result.cards ||
-        randomCardsResponse.result.status === Response.ERROR
-      ) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: randomCardsResponse?.result.message,
+      if (randomCardsResponse?.result.status === Response.ERROR)
+        return errorResponse(
+          domain,
+          handlerId,
+          ErrorCodes.Card.RandomCardsNotFound,
+          ErrorMessages.Card.RandomCardsNotFound,
+        );
+
+      const randomCards = randomCardsResponse?.result.cards;
+      if (!randomCards || randomCards.length === 0)
+        return errorResponse(
+          domain,
+          handlerId,
+          ErrorCodes.Card.RandomCardsNotFound,
+          ErrorMessages.Card.RandomCardsNotFound,
+        );
+
+      const userCards: Array<UserCard> = [];
+
+      // Agregar tarjetas una por una y manejar errores
+      for (const card of randomCards) {
+        // Check if card is foil
+        const isFoil = Math.random() < FOIL_PROBABILITY;
+
+        // Add user card
+        const newAddedCardResponse = await addCardToCollectionHandler({
+          ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+          input: {
+            userId: user.id,
+            cardId: card?.id,
+            quantity: 1,
+            isFoil,
           },
-        };
-      }
+        });
 
-      const { cards: randomCards } = randomCardsResponse.result;
+        // Check if card was added to user's collection
+        if (newAddedCardResponse.result.status === Response.ERROR) return newAddedCardResponse as UserCardsResponse;
 
-      // Check if cards were selected
-      if (!randomCards || randomCards.length === 0) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: CardError.RandomCardsNotFound,
-          },
-        };
-      }
-
-      // Add cards to user's collection
-      const newUserCards = await Promise.all(
-        randomCards.map(async (card) => {
-          if (!card) return;
-
-          // Check if card is foil
-          const isFoil = Math.random() < FOIL_PROBABILITY;
-
-          // Add user card
-          const newAddedCard = await addCardToCollectionHandler({
-            ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-            input: {
-              userId: user.id,
-              cardId: card.id,
-              quantity: 1,
-              isFoil,
-            },
-          });
-
-          // Check if card was added to user's collection
-          if (!newAddedCard || newAddedCard.result.status === Response.ERROR) {
-            return {
-              status: Response.ERROR,
-              message: CardError.NoAddCardToUserCollection,
-            };
-          }
-          return newAddedCard.result.userCard;
-        }),
-      );
-
-      // Check if cards were added to user's collection
-      if (!newUserCards) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: CardError.NoAddCardToUserCollection,
-          },
-        };
+        userCards.push(newAddedCardResponse.result.userCard);
       }
 
       // Decrease user's coins
@@ -492,25 +555,23 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       return {
         result: {
           status: Response.SUCCESS,
-          newUserCards,
+          userCards,
         },
       };
     });
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -519,6 +580,11 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -529,20 +595,16 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
  * @param input GetAllCardsInputType.
  * @returns All cards.
  */
-export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>) => {
+export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>): Promise<CardsResponse> => {
   try {
+    const handlerId = 'getAllCardsHandler';
+
     // Get all cards
     const cards = await ctx.prisma.card.findMany();
 
     // Check if cards were found
-    if (!cards || cards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardsNotFound,
-        },
-      };
-    }
+    if (!cards || cards.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Card.NoCards, ErrorMessages.Card.NoCards);
 
     return {
       result: {
@@ -551,13 +613,18 @@ export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>) 
       },
     };
   } catch (error: unknown) {
-    // TRPC error (Custom error)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
+    }
+
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -566,6 +633,11 @@ export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>) 
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -576,8 +648,12 @@ export const getAllCardsHandler = async ({ ctx }: Params<GetAllCardsInputType>) 
  * @param input GetCardsBySeasonInputType.
  * @returns Cards by season.
  */
-export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsBySeasonInputType>) => {
+export const getCardsBySeasonHandler = async ({
+  ctx,
+  input,
+}: Params<GetCardsBySeasonInputType>): Promise<CardsResponse> => {
   try {
+    const handlerId = 'getCardsBySeasonHandler';
     const { seasonId } = input;
 
     // Get all cards by season
@@ -591,14 +667,8 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
     });
 
     // Check if cards were found
-    if (!cards || cards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardsNotFoundBySeason,
-        },
-      };
-    }
+    if (!cards || cards.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Card.NoCardsBySeason, ErrorMessages.Card.NoCardsBySeason);
 
     return {
       result: {
@@ -607,22 +677,18 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -631,6 +697,11 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -641,12 +712,16 @@ export const getCardsBySeasonHandler = async ({ ctx, input }: Params<GetCardsByS
  * @param input GetCardsBySeasonAndUserIdInputType.
  * @returns Cards by season and user ID.
  */
-export const getCardsBySeasonAndUserIdHandler = async ({ ctx, input }: Params<GetCardsBySeasonAndUserIdInputType>) => {
+export const getCardsBySeasonAndUserIdHandler = async ({
+  ctx,
+  input,
+}: Params<GetCardsBySeasonAndUserIdInputType>): Promise<UserCardsResponse> => {
   try {
+    const handlerId = 'getCardsBySeasonAndUserIdHandler';
     const { seasonId, userId } = input;
 
     // Get all cards by season and user ID
-    const cards = await ctx.prisma.userCard.findMany({
+    const userCards = await ctx.prisma.userCard.findMany({
       where: {
         userId,
         card: {
@@ -656,38 +731,46 @@ export const getCardsBySeasonAndUserIdHandler = async ({ ctx, input }: Params<Ge
     });
 
     // Check if cards were found
-    if (!cards || cards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardsNotFoundBySeasonAndUserId,
-        },
-      };
-    }
+    if (!userCards || userCards.length === 0)
+      return errorResponse(
+        domain,
+        handlerId,
+        ErrorCodes.Card.NoCardsBySeasonAndUserId,
+        ErrorMessages.Card.NoCardsBySeasonAndUserId,
+      );
 
     return {
       result: {
         status: Response.SUCCESS,
-        cards,
+        userCards,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -698,12 +781,16 @@ export const getCardsBySeasonAndUserIdHandler = async ({ ctx, input }: Params<Ge
  * @param input GetCardsByPackIdInputType.
  * @returns Cards by pack ID.
  */
-export const getCardsByPackIdHandler = async ({ ctx, input }: Params<GetCardsByPackIdInputType>) => {
+export const getCardsByPackIdHandler = async ({
+  ctx,
+  input,
+}: Params<GetCardsByPackIdInputType>): Promise<PackCardsResponse> => {
   try {
+    const handlerId = 'getCardsByPackIdHandler';
     const { packId } = input;
 
     // Get cards by pack ID
-    const cards = await ctx.prisma.packCard.findMany({
+    const packCards = await ctx.prisma.packCard.findMany({
       where: {
         packId,
       },
@@ -713,38 +800,41 @@ export const getCardsByPackIdHandler = async ({ ctx, input }: Params<GetCardsByP
     });
 
     // Check if cards were found
-    if (!cards || cards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardsNotFoundByPackId,
-        },
-      };
-    }
+    if (!packCards || packCards.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Card.NoCardsByPackId, ErrorMessages.Card.NoCardsByPackId);
 
     return {
       result: {
         status: Response.SUCCESS,
-        cards,
+        packCards,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -755,8 +845,12 @@ export const getCardsByPackIdHandler = async ({ ctx, input }: Params<GetCardsByP
  * @param input GetAllCardsByRarityInputType.
  * @returns Cards by rarity.
  */
-export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCardsByRarityInputType>) => {
+export const getAllCardsByRarityHandler = async ({
+  ctx,
+  input,
+}: Params<GetAllCardsByRarityInputType>): Promise<CardsResponse> => {
   try {
+    const handlerId = 'getAllCardsByRarityHandler';
     const { rarity } = input;
 
     // Get all cards by rarity
@@ -766,14 +860,8 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
       },
     });
 
-    if (!cards || cards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardsNotFoundByRarety,
-        },
-      };
-    }
+    if (!cards || cards.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Card.NoCardsByRarety, ErrorMessages.Card.NoCardsByRarety);
 
     return {
       result: {
@@ -782,22 +870,18 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -806,6 +890,11 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -816,31 +905,39 @@ export const getAllCardsByRarityHandler = async ({ ctx, input }: Params<GetAllCa
  * @param input GetRandomCardsInputType.
  * @returns Random cards.
  */
-export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCardsInputType>) => {
+export const getRandomCardsHandler = async ({
+  ctx,
+  input,
+}: Params<GetRandomCardsInputType>): Promise<CardsResponse> => {
   try {
+    const handlerId = 'getRandomCardsHandler';
     const { amount } = input;
 
     // Select random cards by amount
     const randomCards = [];
     for (let i = 0; i < amount; i++) {
-      const randomCardByRarity = await getRandomCardByRarityHandler({
+      const randomCardByRarityResponse = await getRandomCardByRarityHandler({
         ctx,
         input: {
           rarity: getRandomRarity(),
         },
       });
-      randomCards.push(randomCardByRarity?.result.card);
+
+      if (randomCardByRarityResponse.result.status === Response.ERROR)
+        return randomCardByRarityResponse as CardsResponse;
+
+      const randomCard = randomCardByRarityResponse?.result.card;
+      randomCards.push(randomCard);
     }
 
     // Check if cards were selected
-    if (!randomCards || randomCards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.RandomCardsNotFound,
-        },
-      };
-    }
+    if (!randomCards || randomCards.length === 0)
+      return errorResponse(
+        domain,
+        handlerId,
+        ErrorCodes.Card.RandomCardsNotFound,
+        ErrorMessages.Card.RandomCardsNotFound,
+      );
 
     return {
       result: {
@@ -849,22 +946,18 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -873,6 +966,11 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -885,20 +983,15 @@ export const getRandomCardsHandler = async ({ ctx, input }: Params<GetRandomCard
  * @param input WonderPickInputType.
  * @returns Random Card got by wonder pick.
  */
-export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputType>) => {
+export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputType>): Promise<UserCardResponse> => {
   try {
+    const handlerId = 'wonderPickHandler';
     const { discordId, position, cards } = input;
 
     const GEMS_COST = await ctx.configService.getGlobalConfig<number>('GEM_COST_TO_GET_RANDOM_CARD', 1);
 
-    if (!cards || cards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardsNotFound,
-        },
-      };
-    }
+    if (!cards || cards.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Card.NoCards, ErrorMessages.Card.NoCards);
 
     return await ctx.prisma.$transaction(
       async (prismaTransaction) => {
@@ -908,16 +1001,12 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
           input: { discordId },
         });
 
+        if (userResponse.result.status === Response.ERROR) return userResponse as UserCardResponse;
+
         // Check if user has enough gems
         const userGems = userResponse?.result.gems;
-        if (userGems && userGems < GEMS_COST) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: UserError.NoGems,
-            },
-          };
-        }
+        if (userGems && userGems < GEMS_COST)
+          return errorResponse(domain, handlerId, ErrorCodes.User.NoGems, ErrorMessages.User.NoGems);
 
         // Get random card from user pack
         const shuffledCards = cards.sort(() => Math.random() - 0.5);
@@ -929,39 +1018,19 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
           input: { id: selectedCard as string },
         });
-
-        // Check if card was found
-        if (!cardResponse || !cardResponse.result || cardResponse.result.status === Response.ERROR) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: cardResponse?.result.message,
-            },
-          };
-        }
-
-        const randomCard = cardResponse.result.card;
-        const userId = userResponse?.result.userId as string;
+        if (cardResponse.result.status === Response.ERROR) return cardResponse as UserCardResponse;
 
         // Add card to user collection
+        const randomCard = cardResponse.result.card;
+        const userId = userResponse?.result.userId;
         const addCardToCollectionResponse = await addCardToCollectionHandler({
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-          input: { userId, cardId: randomCard?.id as string, quantity: 1, isFoil: false },
+          input: { userId, cardId: randomCard?.id, quantity: 1, isFoil: false },
         });
 
         // Check if card was added to user collection
-        if (
-          !addCardToCollectionResponse ||
-          !addCardToCollectionResponse.result ||
-          addCardToCollectionResponse.result.status === Response.ERROR
-        ) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: addCardToCollectionResponse?.result.message,
-            },
-          };
-        }
+        if (addCardToCollectionResponse.result.status === Response.ERROR)
+          return addCardToCollectionResponse;
 
         // Decrease user gems
         await decreaseUserGemsHandler({
@@ -982,22 +1051,18 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
       },
     );
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -1006,6 +1071,11 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -1016,30 +1086,29 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
  * @param input GetRandomCardByRarityInputType.
  * @returns Random card.
  */
-export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRandomCardByRarityInputType>) => {
+export const getRandomCardByRarityHandler = async ({
+  ctx,
+  input,
+}: Params<GetRandomCardByRarityInputType>): Promise<CardResponse> => {
   try {
+    const handlerId = 'getRandomCardByRarityHandler';
     const { rarity } = input;
 
     // Get all cards by rarity
-    const cards = await getAllCardsByRarityHandler({
+    const cardsResponse = await getAllCardsByRarityHandler({
       ctx,
       input: {
         rarity,
       },
     });
 
-    if (!cards?.result?.cards || cards.result.cards.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardsNotFoundByRarety,
-        },
-      };
-    }
+    if (cardsResponse.result.status === Response.ERROR) return cardsResponse as CardResponse;
+    if (!cardsResponse.result.cards || cardsResponse.result.cards.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Card.NoCardsByRarety, ErrorMessages.Card.NoCardsByRarety);
 
-    const { cards: allCardsByRarity } = cards.result;
+    const { cards: allCardsByRarity } = cardsResponse.result;
     const randomIndex = Math.floor(Math.random() * allCardsByRarity.length);
-    const randomCard = allCardsByRarity[randomIndex];
+    const randomCard = allCardsByRarity[randomIndex] as Card;
 
     return {
       result: {
@@ -1048,22 +1117,18 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -1072,6 +1137,11 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -1082,24 +1152,21 @@ export const getRandomCardByRarityHandler = async ({ ctx, input }: Params<GetRan
  * @param input GetCollectionInputType.
  * @returns User's collection.
  */
-export const getUserCollectionHandler = async ({ ctx, input }: Params<GetUserCollectionInputType>) => {
+export const getUserCollectionHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserCollectionInputType>): Promise<UserCardsResponse> => {
   try {
+    const handlerId = 'getUserCollectionHandler';
     const { userId, sortBy, orderBy } = input;
 
     // Check if user exists
     const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: userResponse?.result.message,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR) return userResponse as UserCardsResponse;
 
     // Get user's collection
     const user = userResponse.result.user;
-    const userCollection = await ctx.prisma.userCard.findMany({
+    const userCards = await ctx.prisma.userCard.findMany({
       where: {
         userId: user?.id,
       },
@@ -1109,36 +1176,28 @@ export const getUserCollectionHandler = async ({ ctx, input }: Params<GetUserCol
       orderBy: [...getSortingOptions(sortBy, orderBy)],
     });
 
-    if (!userCollection || userCollection.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.NoUserCards,
-        },
-      };
-    }
+    if (!userCards || userCards.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUserCards, ErrorMessages.User.NoUserCards);
 
     return {
       result: {
         status: Response.SUCCESS,
-        collection: userCollection,
+        userCards,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -1147,6 +1206,11 @@ export const getUserCollectionHandler = async ({ ctx, input }: Params<GetUserCol
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -1157,27 +1221,25 @@ export const getUserCollectionHandler = async ({ ctx, input }: Params<GetUserCol
  * @param input AddCardToCollectionInputType.
  * @returns User's new card.
  */
-export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardToCollectionInputType>) => {
+export const addCardToCollectionHandler = async ({
+  ctx,
+  input,
+}: Params<AddCardToCollectionInputType>): Promise<UserCardResponse> => {
   try {
+    const handlerId = 'addCardToCollectionHandler';
     const { userId, cardId, quantity = 1, isFoil = false } = input;
 
     // Get user
     const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: userResponse?.result.message,
-        },
-      };
-    }
+    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     // Add or update user card
     const user = userResponse.result.user;
     const userCard = await ctx.prisma.userCard.upsert({
       where: {
         userId_cardId_isFoil: {
-          userId: user?.id as string,
+          userId: user?.id,
           cardId,
           isFoil,
         },
@@ -1188,7 +1250,7 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
         },
       },
       create: {
-        userId: user?.id as string,
+        userId: user?.id,
         cardId,
         isFoil,
         quantity,
@@ -1199,14 +1261,13 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
     });
 
     // Check if card was added to user
-    if (!userCard) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.NoAddCardToUserCollection,
-        },
-      };
-    }
+    if (!userCard)
+      return errorResponse(
+        domain,
+        handlerId,
+        ErrorCodes.Card.NoAddCardToUserCollection,
+        ErrorMessages.Card.NoAddCardToUserCollection,
+      );
 
     return {
       result: {
@@ -1215,20 +1276,18 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -1237,6 +1296,11 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -1247,34 +1311,24 @@ export const addCardToCollectionHandler = async ({ ctx, input }: Params<AddCardT
  * @param input RemoveCardFromCollectionInputType.
  * @returns User's updated card.
  */
-export const removeCardFromCollectionHandler = async ({ ctx, input }: Params<RemoveCardFromCollectionInputType>) => {
+export const removeCardFromCollectionHandler = async ({
+  ctx,
+  input,
+}: Params<RemoveCardFromCollectionInputType>): Promise<UserCardResponse> => {
   try {
+    const handlerId = 'removeCardFromCollectionHandler';
     const { userId, cardId, quantity = 1 } = input;
 
     // Get user
     const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: userResponse?.result.message,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR) return userResponse as UserCardResponse;
 
     // Get user card
     const user = userResponse.result.user;
     const userCard = await ctx.prisma.userCard.findFirst({
-      where: { userId: user?.id as string, cardId },
+      where: { userId: user?.id, cardId },
     });
-    if (!userCard) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: CardError.CardNotFound,
-        },
-      };
-    }
+    if (!userCard) return errorResponse(domain, handlerId, ErrorCodes.Card.NoCard, ErrorMessages.Card.NoCard);
 
     // Calculate new quantity
     const newQuantity = userCard.quantity - quantity;
@@ -1306,20 +1360,18 @@ export const removeCardFromCollectionHandler = async ({ ctx, input }: Params<Rem
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -1328,5 +1380,10 @@ export const removeCardFromCollectionHandler = async ({ ctx, input }: Params<Rem
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
