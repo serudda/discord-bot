@@ -1,13 +1,16 @@
-import { CommonError, SeasonError, UserError } from '@discord-bot/error-handler';
-import { Response, TRPCErrorCode, type Params } from '../common';
+import { Response, TRPCErrorCode, type Params, type SeasonResponse, type SeasonsResponse } from '../common';
 import type {
   GetAllSeasonsInputType,
   GetCurrentSeasonInputType,
   GetSeasonByIdInputType,
   GetSeasonsByDateInputType,
 } from '../schema/season.schema';
+import { ErrorCodes, ErrorMessages, errorResponse } from '../services';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+// Id domain to handle errors
+const domain = 'SEASON';
 
 /**
  * Get all seasons.
@@ -16,20 +19,15 @@ import { z } from 'zod';
  * @param input GetAllSeasonsInputType.
  * @returns All seasons.
  */
-export const getAllSeasonsHandler = async ({ ctx }: Params<GetAllSeasonsInputType>) => {
+export const getAllSeasonsHandler = async ({ ctx }: Params<GetAllSeasonsInputType>): Promise<SeasonsResponse> => {
   try {
+    const handlerId = 'getAllSeasonsHandler';
     // Get all seasons
     const seasons = await ctx.prisma.season.findMany();
 
     // Check if seasons were found
-    if (!seasons || seasons.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: SeasonError.SeasonsNotFound,
-        },
-      };
-    }
+    if (!seasons || seasons.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Season.NoSeasons, ErrorMessages.Season.NoSeasons);
 
     return {
       result: {
@@ -38,13 +36,18 @@ export const getAllSeasonsHandler = async ({ ctx }: Params<GetAllSeasonsInputTyp
       },
     };
   } catch (error: unknown) {
-    // TRPC error (Custom error)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
+    }
+
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -53,6 +56,11 @@ export const getAllSeasonsHandler = async ({ ctx }: Params<GetAllSeasonsInputTyp
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -63,8 +71,9 @@ export const getAllSeasonsHandler = async ({ ctx }: Params<GetAllSeasonsInputTyp
  * @param input GetSeasonByIdInputType.
  * @returns Season by ID.
  */
-export const getSeasonByIdHandler = async ({ ctx, input }: Params<GetSeasonByIdInputType>) => {
+export const getSeasonByIdHandler = async ({ ctx, input }: Params<GetSeasonByIdInputType>): Promise<SeasonResponse> => {
   try {
+    const handlerId = 'getSeasonByIdHandler';
     const { seasonId } = input;
 
     // Get season by ID
@@ -75,14 +84,7 @@ export const getSeasonByIdHandler = async ({ ctx, input }: Params<GetSeasonByIdI
     });
 
     // Check if season was found
-    if (!season) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: SeasonError.SeasonNotFound,
-        },
-      };
-    }
+    if (!season) return errorResponse(domain, handlerId, ErrorCodes.Season.NoSeason, ErrorMessages.Season.NoSeason);
 
     return {
       result: {
@@ -91,22 +93,18 @@ export const getSeasonByIdHandler = async ({ ctx, input }: Params<GetSeasonByIdI
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -115,6 +113,11 @@ export const getSeasonByIdHandler = async ({ ctx, input }: Params<GetSeasonByIdI
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -125,8 +128,9 @@ export const getSeasonByIdHandler = async ({ ctx, input }: Params<GetSeasonByIdI
  * @param input GetCurrentSeasonInputType.
  * @returns Current season.
  */
-export const getCurrentSeasonHandler = async ({ ctx }: Params<GetCurrentSeasonInputType>) => {
+export const getCurrentSeasonHandler = async ({ ctx }: Params<GetCurrentSeasonInputType>): Promise<SeasonResponse> => {
   try {
+    const handlerId = 'getCurrentSeasonHandler';
     // Get current season
     const season = await ctx.prisma.season.findFirst({
       where: {
@@ -140,14 +144,7 @@ export const getCurrentSeasonHandler = async ({ ctx }: Params<GetCurrentSeasonIn
     });
 
     // Check if season was found
-    if (!season) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: SeasonError.SeasonNotFound,
-        },
-      };
-    }
+    if (!season) return errorResponse(domain, handlerId, ErrorCodes.Season.NoSeason, ErrorMessages.Season.NoSeason);
 
     return {
       result: {
@@ -156,13 +153,18 @@ export const getCurrentSeasonHandler = async ({ ctx }: Params<GetCurrentSeasonIn
       },
     };
   } catch (error: unknown) {
-    // TRPC error (Custom error)
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
+    }
+
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -171,6 +173,11 @@ export const getCurrentSeasonHandler = async ({ ctx }: Params<GetCurrentSeasonIn
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -181,8 +188,12 @@ export const getCurrentSeasonHandler = async ({ ctx }: Params<GetCurrentSeasonIn
  * @param input GetSeasonsByDateInputType.
  * @returns Seasons by date.
  */
-export const getSeasonsByDateHandler = async ({ ctx, input }: Params<GetSeasonsByDateInputType>) => {
+export const getSeasonsByDateHandler = async ({
+  ctx,
+  input,
+}: Params<GetSeasonsByDateInputType>): Promise<SeasonsResponse> => {
   try {
+    const handlerId = 'getSeasonsByDateHandler';
     const { startDate, endDate } = input;
 
     // Get seasons by date
@@ -198,14 +209,8 @@ export const getSeasonsByDateHandler = async ({ ctx, input }: Params<GetSeasonsB
     });
 
     // Check if seasons were found
-    if (!seasons || seasons.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: SeasonError.SeasonsNotFound,
-        },
-      };
-    }
+    if (!seasons || seasons.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.Season.NoSeasons, ErrorMessages.Season.NoSeasons);
 
     return {
       result: {
@@ -214,22 +219,18 @@ export const getSeasonsByDateHandler = async ({ ctx, input }: Params<GetSeasonsB
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -238,5 +239,10 @@ export const getSeasonsByDateHandler = async ({ ctx, input }: Params<GetSeasonsB
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
