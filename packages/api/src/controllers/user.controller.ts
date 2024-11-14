@@ -1,6 +1,18 @@
-import type { Card, UserCard } from '@discord-bot/db';
-import { AccountError, CardError, CommonError, SeasonError, UserError } from '@discord-bot/error-handler';
-import { PrismaErrorCode, Response, TRPCErrorCode, type Ctx, type Params } from '../common';
+import {
+  PrismaErrorCode,
+  Response,
+  TRPCErrorCode,
+  type Ctx,
+  type Params,
+  type UserCardResponse,
+  type UserCoinsResponse,
+  type UserGemsResponse,
+  type UserInventoryResponse,
+  type UserPacksResponse,
+  type UserRegisterResponse,
+  type UserResponse,
+  type UserSeasonProgressResponse,
+} from '../common';
 import type {
   CreateUserInputType,
   DecreaseUserCoinsInputType,
@@ -9,6 +21,7 @@ import type {
   GetUserByEmailInputType,
   GetUserByIdInputType,
   GetUserByUsernameInputType,
+  GetUserCardByNumberInputType,
   GetUserCoinsInputType,
   GetUserGemsInputType,
   GetUserInventoryInputType,
@@ -20,11 +33,15 @@ import type {
   UpdateUserCoinsInputType,
   UpdateUserGemsInputType,
 } from '../schema/user.schema';
+import { ErrorCodes, ErrorMessages, errorResponse } from '../services';
 import { createAccountHandler } from './account.controller';
 import { getCardsBySeasonAndUserIdHandler, getCardsBySeasonHandler } from './card.controller';
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+// Id domain to handle errors
+const domain = 'USER';
 
 /**
  * Get user by id.
@@ -33,8 +50,9 @@ import { z } from 'zod';
  * @param input GetUserByIdInputType.
  * @returns User.
  */
-export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInputType>) => {
+export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'getUserByIdHandler';
     const user = await ctx.prisma.user.findUnique({
       where: { id: input.id },
       include: {
@@ -43,14 +61,7 @@ export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInput
     });
 
     // Check if user exists
-    if (!user) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (!user) return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     return {
       result: {
@@ -59,23 +70,31 @@ export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInput
       },
     };
   } catch (error: unknown) {
-    // Prisma error (Database issue)
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === PrismaErrorCode.RecordDoesNotExist) {
-        throw new TRPCError({
-          code: TRPCErrorCode.NOT_FOUND,
-          message: UserError.UserNotFound,
-        });
-      }
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -86,7 +105,12 @@ export const getUserByIdHandler = async ({ ctx, input }: Params<GetUserByIdInput
  * @param input GetUserByDiscordIdInputType.
  * @returns User.
  */
-export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserByDiscordIdInputType>) => {
+export const getUserByDiscordIdHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserByDiscordIdInputType>): Promise<UserResponse> => {
+  const handlerId = 'getUserByDiscordIdHandler';
+
   try {
     const user = await ctx.prisma.user.findFirst({
       where: {
@@ -104,14 +128,7 @@ export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserBy
     });
 
     // Check if user exists
-    if (!user) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (!user) return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     return {
       result: {
@@ -120,23 +137,31 @@ export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserBy
       },
     };
   } catch (error: unknown) {
-    // Prisma error (Database issue)
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === PrismaErrorCode.RecordDoesNotExist) {
-        throw new TRPCError({
-          code: TRPCErrorCode.NOT_FOUND,
-          message: UserError.UserNotFound,
-        });
-      }
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -147,15 +172,55 @@ export const getUserByDiscordIdHandler = async ({ ctx, input }: Params<GetUserBy
  * @param input GetUserByEmailInputType.
  * @returns User.
  */
-export const getUserByEmailHandler = async ({ ctx, input }: Params<GetUserByEmailInputType>) => {
-  return ctx.prisma.user.findUnique({
-    where: {
-      email: input.email,
-    },
-    include: {
-      accounts: true,
-    },
-  });
+export const getUserByEmailHandler = async ({ ctx, input }: Params<GetUserByEmailInputType>): Promise<UserResponse> => {
+  const handlerId = 'getUserByEmailHandler';
+
+  try {
+    const user = await ctx.prisma.user.findUnique({
+      where: {
+        email: input.email,
+      },
+      include: {
+        accounts: true,
+      },
+    });
+
+    // Check if user exists
+    if (!user) return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        user,
+      },
+    };
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
+    }
+
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
+  }
 };
 
 /**
@@ -165,7 +230,11 @@ export const getUserByEmailHandler = async ({ ctx, input }: Params<GetUserByEmai
  * @param input GetUserByUsernameInputType.
  * @returns User.
  */
-export const getUserByUsernameHandler = async ({ ctx, input }: Params<GetUserByUsernameInputType>) => {
+export const getUserByUsernameHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserByUsernameInputType>): Promise<UserResponse> => {
+  const handlerId = 'getUserByUsernameHandler';
   try {
     const { username } = input;
 
@@ -179,14 +248,7 @@ export const getUserByUsernameHandler = async ({ ctx, input }: Params<GetUserByU
     });
 
     // Check if user exists
-    if (!user) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (!user) return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     return {
       result: {
@@ -195,23 +257,31 @@ export const getUserByUsernameHandler = async ({ ctx, input }: Params<GetUserByU
       },
     };
   } catch (error: unknown) {
-    // Prisma error (Database issue)
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === PrismaErrorCode.RecordDoesNotExist) {
-        throw new TRPCError({
-          code: TRPCErrorCode.NOT_FOUND,
-          message: UserError.UserNotFound,
-        });
-      }
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
       throw new TRPCError({
         code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -222,8 +292,9 @@ export const getUserByUsernameHandler = async ({ ctx, input }: Params<GetUserByU
  * @param input CreateUserInputType.
  * @returns User.
  */
-export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputType>) => {
+export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'createUserHandler';
     const { name, username, email, image, coins, gems } = input;
 
     const user = await ctx.prisma.user.create({
@@ -238,14 +309,7 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
     });
 
     // Check if user was created
-    if (!user) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotCreated,
-        },
-      };
-    }
+    if (!user) return errorResponse(domain, handlerId, ErrorCodes.User.NoUserCreated, ErrorMessages.User.NoUserCreated);
 
     return {
       result: {
@@ -265,22 +329,18 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
       }
     }
 
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = 'createUser: invalid input';
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = 'createUser: unauthorized';
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -289,6 +349,11 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -299,30 +364,27 @@ export const createUserHandler = async ({ ctx, input }: Params<CreateUserInputTy
  * @param input RegisterUserInputType.
  * @returns User.
  */
-export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInputType>) => {
+export const registerUserHandler = async ({
+  ctx,
+  input,
+}: Params<RegisterUserInputType>): Promise<UserRegisterResponse> => {
   try {
+    const handlerId = 'registerUserHandler';
     const { discordId, email, name, username, image } = input;
     const INIT_COINS = await ctx.configService.getGlobalConfig<number>('INIT_COINS', 500);
     const INIT_GEMS = await ctx.configService.getGlobalConfig<number>('INIT_GEMS', 5);
 
     return await ctx.prisma.$transaction(async (prismaTransaction) => {
       // Check if user already exists
-      const user = await getUserByDiscordIdHandler({
+      const userResponse = await getUserByDiscordIdHandler({
         ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: { discordId },
       });
-
-      if (user?.result && user.result.status === Response.SUCCESS) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: UserError.UserAlreadyExists,
-          },
-        };
-      }
+      if (userResponse?.result && userResponse.result.status === Response.SUCCESS)
+        return errorResponse(domain, handlerId, ErrorCodes.User.AlreadyExists, ErrorMessages.User.AlreadyExists);
 
       // Create user
-      const newUser = await createUserHandler({
+      const newUserResponse = await createUserHandler({
         ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: {
           name,
@@ -335,60 +397,56 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
       });
 
       // Check if user was created
-      if (!newUser || !newUser.result.user || newUser.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: newUser?.result.message,
-          },
-        };
-      }
+      if (newUserResponse?.result.status === Response.ERROR) return newUserResponse as UserRegisterResponse;
 
       // Create account
-      const newAccount = await createAccountHandler({
+      const newUser = newUserResponse?.result.user;
+      const newAccountResponse = await createAccountHandler({
         ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
         input: {
           type: 'discord',
           provider: 'discord',
           providerAccountId: discordId,
-          userId: newUser.result.user.id,
+          userId: newUser.id,
         },
       });
 
       // Check if account was created
-      if (!newAccount || newAccount.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: AccountError.AccountNotCreated,
-          },
-        };
-      }
+      if (newAccountResponse?.result.status === Response.ERROR) return newAccountResponse as UserRegisterResponse;
 
       return {
         result: {
           status: Response.SUCCESS,
-          name: newUser?.result?.user?.name,
-          coins: newUser?.result?.user?.coins,
-          gems: newUser?.result?.user?.gems,
+          name: newUser.name,
+          coins: newUser.coins,
+          gems: newUser.gems,
         },
-      };
+      } as UserRegisterResponse;
     });
   } catch (error: unknown) {
-    // Zod error (Invalid input)
+    // Prisma error (Database issue)
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === PrismaErrorCode.UniqueConstraintViolation) {
+        const message = 'createUser: user already exists';
+        throw new TRPCError({
+          code: TRPCErrorCode.CONFLICT,
+          message,
+        });
+      }
+    }
+
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -397,6 +455,11 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -405,10 +468,14 @@ export const registerUserHandler = async ({ ctx, input }: Params<RegisterUserInp
  *
  * @param ctx Ctx.
  * @param input GetUserPacksInputType.
- * @returns Packs.
+ * @returns Pack[].
  */
-export const getUserPacksHandler = async ({ ctx, input }: Params<GetUserPacksInputType>) => {
+export const getUserPacksHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserPacksInputType>): Promise<UserPacksResponse> => {
   try {
+    const handlerId = 'getUserPacksHandler';
     const { discordId } = input;
 
     // Get user
@@ -418,36 +485,40 @@ export const getUserPacksHandler = async ({ ctx, input }: Params<GetUserPacksInp
     });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
+
+    // Get user packs
+    const user = userResponse.result.user;
+    const userPacks = await ctx.prisma.pack.findMany({
+      where: {
+        userId: user?.id,
+      },
+    });
+
+    // Check if user packs exists
+    if (!userPacks || userPacks.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUserPacks, ErrorMessages.User.NoUserPacks);
 
     return {
       result: {
         status: Response.SUCCESS,
-        packs: userResponse.result.user?.packs,
+        userPacks,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -456,6 +527,11 @@ export const getUserPacksHandler = async ({ ctx, input }: Params<GetUserPacksInp
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -466,46 +542,58 @@ export const getUserPacksHandler = async ({ ctx, input }: Params<GetUserPacksInp
  * @param input GetUserInventoryInputType.
  * @returns Inventory.
  */
-export const getUserInventoryHandler = async ({ ctx, input }: Params<GetUserInventoryInputType>) => {
+export const getUserInventoryHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserInventoryInputType>): Promise<UserInventoryResponse> => {
   try {
+    const handlerId = 'getUserInventoryHandler';
     const { discordId } = input;
 
     // Get user
-    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
+    // En getUserByDiscordIdHandler, modifica el include
+    const user = await ctx.prisma.user.findFirst({
+      where: {
+        accounts: {
+          some: {
+            providerAccountId: discordId,
+            provider: 'discord',
+          },
+        },
+      },
+      include: {
+        _count: {
+          select: {
+            packs: true,
+          },
+        },
+      },
+    });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (!user) return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     return {
       result: {
         status: Response.SUCCESS,
-        packs: userResponse.result.user?.packs,
-        coins: userResponse.result.user?.coins,
-        gems: userResponse.result.user?.gems,
+        packs: user._count.packs,
+        coins: user.coins,
+        gems: user.gems,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -514,6 +602,83 @@ export const getUserInventoryHandler = async ({ ctx, input }: Params<GetUserInve
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
+  }
+};
+
+/**
+ * Get user card by number.
+ *
+ * @param ctx Ctx.
+ * @param input GetUserCardByNumberInputType.
+ * @returns Card by number.
+ */
+export const getUserCardByNumberHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserCardByNumberInputType>): Promise<UserCardResponse> => {
+  try {
+    const handlerId = 'getUserCardByNumberHandler';
+    const { userId, cardNumber, isFoil } = input;
+
+    // Get user
+    const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId: userId } });
+
+    // Check if user exists
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
+
+    // Get user card by number
+    const user = userResponse.result.user;
+    const userCard = await ctx.prisma.userCard.findFirst({
+      where: {
+        userId: user?.id,
+        card: {
+          cardNumber,
+        },
+        isFoil,
+      },
+    });
+
+    // Check if user card exists
+    if (!userCard) return errorResponse(domain, handlerId, ErrorCodes.User.NoUserCard, ErrorMessages.User.NoUserCard);
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        userCard,
+      },
+    };
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
+    }
+
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -524,54 +689,43 @@ export const getUserInventoryHandler = async ({ ctx, input }: Params<GetUserInve
  * @param input GetUserCoinsInputType.
  * @returns Coins.
  */
-export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInputType>) => {
+export const getUserCoinsHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserCoinsInputType>): Promise<UserCoinsResponse> => {
   try {
+    const handlerId = 'getUserCoinsHandler';
     const { discordId } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR) return userResponse as UserCoinsResponse;
 
     // Check if user has coins
-    if (!userResponse.result.user?.coins) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.NoCoins,
-        },
-      };
-    }
+    const user = userResponse.result.user;
+    if (!user.coins) return errorResponse(domain, handlerId, ErrorCodes.User.NoCoins, ErrorMessages.User.NoCoins);
 
     return {
       result: {
         status: Response.SUCCESS,
-        coins: userResponse.result.user?.coins,
+        coins: user.coins,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -580,6 +734,11 @@ export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInp
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -590,22 +749,20 @@ export const getUserCoinsHandler = async ({ ctx, input }: Params<GetUserCoinsInp
  * @param input UpdateUserCoinsInputType.
  * @returns User.
  */
-export const updateUserCoinsHandler = async ({ ctx, input }: Params<UpdateUserCoinsInputType>) => {
+export const updateUserCoinsHandler = async ({
+  ctx,
+  input,
+}: Params<UpdateUserCoinsInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'updateUserCoinsHandler';
     const { discordId, coins } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     // Update user coins
     const user = userResponse.result.user;
@@ -625,20 +782,18 @@ export const updateUserCoinsHandler = async ({ ctx, input }: Params<UpdateUserCo
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -647,6 +802,11 @@ export const updateUserCoinsHandler = async ({ ctx, input }: Params<UpdateUserCo
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -657,22 +817,20 @@ export const updateUserCoinsHandler = async ({ ctx, input }: Params<UpdateUserCo
  * @param input IncreaseUserCoinsInputType.
  * @returns User.
  */
-export const increaseUserCoinsHandler = async ({ ctx, input }: Params<IncreaseUserCoinsInputType>) => {
+export const increaseUserCoinsHandler = async ({
+  ctx,
+  input,
+}: Params<IncreaseUserCoinsInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'increaseUserCoinsHandler';
     const { discordId, coins } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     // Increase user coins
     const user = userResponse.result.user;
@@ -687,6 +845,10 @@ export const increaseUserCoinsHandler = async ({ ctx, input }: Params<IncreaseUs
       },
     });
 
+    // Check if user coins were increased
+    if (!updatedUser)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoIncreaseCoins, ErrorMessages.User.NoIncreaseCoins);
+
     return {
       result: {
         status: Response.SUCCESS,
@@ -694,20 +856,18 @@ export const increaseUserCoinsHandler = async ({ ctx, input }: Params<IncreaseUs
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -716,6 +876,11 @@ export const increaseUserCoinsHandler = async ({ ctx, input }: Params<IncreaseUs
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -726,36 +891,27 @@ export const increaseUserCoinsHandler = async ({ ctx, input }: Params<IncreaseUs
  * @param input DecreaseUserCoinsInputType.
  * @returns User.
  */
-export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUserCoinsInputType>) => {
+export const decreaseUserCoinsHandler = async ({
+  ctx,
+  input,
+}: Params<DecreaseUserCoinsInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'decreaseUserCoinsHandler';
     const { discordId, coins } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     // Check if user has enough coins
-    const userCoins = userResponse.result.user?.coins;
-    if (userCoins && userCoins < coins) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.NoDecreaseCoins,
-        },
-      };
-    }
+    const user = userResponse.result.user;
+    if (user.coins && user.coins < coins)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoDecreaseCoins, ErrorMessages.User.NoDecreaseCoins);
 
     // Decrease user coins
-    const user = userResponse.result.user;
     const updatedUser = await ctx.prisma.user.update({
       where: {
         id: user?.id,
@@ -768,14 +924,8 @@ export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUs
     });
 
     // Check if user coins were decreased
-    if (!updatedUser) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.NoDecreaseCoins,
-        },
-      };
-    }
+    if (!updatedUser)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoDecreaseCoins, ErrorMessages.User.NoDecreaseCoins);
 
     return {
       result: {
@@ -784,20 +934,18 @@ export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUs
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -806,6 +954,11 @@ export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUs
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -816,22 +969,17 @@ export const decreaseUserCoinsHandler = async ({ ctx, input }: Params<DecreaseUs
  * @param input GetUserGemsInputType.
  * @returns Gems.
  */
-export const getUserGemsHandler = async ({ ctx, input }: Params<GetUserGemsInputType>) => {
+export const getUserGemsHandler = async ({ ctx, input }: Params<GetUserGemsInputType>): Promise<UserGemsResponse> => {
   try {
+    const handlerId = 'getUserGemsHandler';
     const { discordId } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     return {
       result: {
@@ -841,20 +989,18 @@ export const getUserGemsHandler = async ({ ctx, input }: Params<GetUserGemsInput
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -863,6 +1009,11 @@ export const getUserGemsHandler = async ({ ctx, input }: Params<GetUserGemsInput
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -873,22 +1024,17 @@ export const getUserGemsHandler = async ({ ctx, input }: Params<GetUserGemsInput
  * @param input UpdateUserGemsInputType.
  * @returns User.
  */
-export const updateUserGemsHandler = async ({ ctx, input }: Params<UpdateUserGemsInputType>) => {
+export const updateUserGemsHandler = async ({ ctx, input }: Params<UpdateUserGemsInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'updateUserGemsHandler';
     const { discordId, gems } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     // Update user gems
     const user = userResponse.result.user;
@@ -901,6 +1047,10 @@ export const updateUserGemsHandler = async ({ ctx, input }: Params<UpdateUserGem
       },
     });
 
+    // Check if user gems were updated
+    if (!updatedUser)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUpdateUserGems, ErrorMessages.User.NoUpdateUserGems);
+
     return {
       result: {
         status: Response.SUCCESS,
@@ -908,20 +1058,18 @@ export const updateUserGemsHandler = async ({ ctx, input }: Params<UpdateUserGem
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -930,6 +1078,11 @@ export const updateUserGemsHandler = async ({ ctx, input }: Params<UpdateUserGem
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -940,22 +1093,20 @@ export const updateUserGemsHandler = async ({ ctx, input }: Params<UpdateUserGem
  * @param input IncreaseUserGemsInputType.
  * @returns User.
  */
-export const increaseUserGemsHandler = async ({ ctx, input }: Params<IncreaseUserGemsInputType>) => {
+export const increaseUserGemsHandler = async ({
+  ctx,
+  input,
+}: Params<IncreaseUserGemsInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'increaseUserGemsHandler';
     const { discordId, gems } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     // Increase user gems
     const user = userResponse.result.user;
@@ -970,6 +1121,10 @@ export const increaseUserGemsHandler = async ({ ctx, input }: Params<IncreaseUse
       },
     });
 
+    // Check if user gems were increased
+    if (!updatedUser)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoIncreaseGems, ErrorMessages.User.NoIncreaseGems);
+
     return {
       result: {
         status: Response.SUCCESS,
@@ -977,20 +1132,18 @@ export const increaseUserGemsHandler = async ({ ctx, input }: Params<IncreaseUse
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -999,6 +1152,11 @@ export const increaseUserGemsHandler = async ({ ctx, input }: Params<IncreaseUse
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -1009,22 +1167,20 @@ export const increaseUserGemsHandler = async ({ ctx, input }: Params<IncreaseUse
  * @param input DecreaseUserGemsInputType.
  * @returns User.
  */
-export const decreaseUserGemsHandler = async ({ ctx, input }: Params<DecreaseUserGemsInputType>) => {
+export const decreaseUserGemsHandler = async ({
+  ctx,
+  input,
+}: Params<DecreaseUserGemsInputType>): Promise<UserResponse> => {
   try {
+    const handlerId = 'decreaseUserGemsHandler';
     const { discordId, gems } = input;
 
     // Get user
     const userResponse = await getUserByDiscordIdHandler({ ctx, input: { discordId } });
 
     // Check if user exists
-    if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    if (userResponse.result.status === Response.ERROR)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUser, ErrorMessages.User.NoUser);
 
     // Decrease user gems
     const user = userResponse.result.user;
@@ -1039,6 +1195,10 @@ export const decreaseUserGemsHandler = async ({ ctx, input }: Params<DecreaseUse
       },
     });
 
+    // Check if user gems were decreased
+    if (!updatedUser)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoDecreaseGems, ErrorMessages.User.NoDecreaseGems);
+
     return {
       result: {
         status: Response.SUCCESS,
@@ -1046,20 +1206,18 @@ export const decreaseUserGemsHandler = async ({ ctx, input }: Params<DecreaseUse
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -1068,6 +1226,11 @@ export const decreaseUserGemsHandler = async ({ ctx, input }: Params<DecreaseUse
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -1080,7 +1243,10 @@ export const decreaseUserGemsHandler = async ({ ctx, input }: Params<DecreaseUse
  * @returns User's progress in season (owned and missing
  *   cards).
  */
-export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUserSeasonProgressInputType>) => {
+export const getUserSeasonProgressHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserSeasonProgressInputType>): Promise<UserSeasonProgressResponse> => {
   try {
     const { seasonId, userId } = input;
 
@@ -1093,14 +1259,8 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
       });
 
       // Check if season has cards
-      if (!seasonCardsResponse || !seasonCardsResponse.result || seasonCardsResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: SeasonError.CardsNotFoundBySeason,
-          },
-        };
-      }
+      if (seasonCardsResponse?.result.status === Response.ERROR)
+        return seasonCardsResponse as UserSeasonProgressResponse;
 
       // Get user's card from the season
       const userCardsResponse = await getCardsBySeasonAndUserIdHandler({
@@ -1109,18 +1269,11 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
       });
 
       // Check if user has cards in the season
-      if (!userCardsResponse || !userCardsResponse.result || userCardsResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: CardError.CardsNotFoundBySeasonAndUserId,
-          },
-        };
-      }
+      if (userCardsResponse?.result.status === Response.ERROR) return userCardsResponse as UserSeasonProgressResponse;
 
       // Combine season cards with user collection status
-      const seasonCards = seasonCardsResponse.result.cards as Array<Card>;
-      const userCards = userCardsResponse.result.cards as Array<UserCard>;
+      const seasonCards = seasonCardsResponse?.result.cards;
+      const userCards = userCardsResponse?.result.userCards;
       const seasonProgress = seasonCards.map((seasonCard) => {
         // Find matching user cards
         const matchingUserCards = userCards.filter((card) => card.cardId === seasonCard.id);
@@ -1147,7 +1300,7 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
         result: {
           status: Response.SUCCESS,
           progress: {
-            cards: seasonProgress,
+            progressCards: seasonProgress,
             stats: {
               total: totalCards,
               owned: ownedCards,
@@ -1160,20 +1313,18 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
       };
     });
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message: CommonError.InvalidInput,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -1182,5 +1333,10 @@ export const getUserSeasonProgressHandler = async ({ ctx, input }: Params<GetUse
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
