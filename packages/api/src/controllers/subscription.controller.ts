@@ -5,9 +5,13 @@ import {
   type GetUserSubscriptionInputType,
   type UpdateUserSubscriptionInputType,
 } from '../schema/subscription.schema';
+import { ErrorCodes, ErrorMessages, errorResponse } from '../services';
 import { getUserByIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+// Id domain to handle errors
+const domain = 'SUBSCRIPTION';
 
 /**
  * Get user subscription.
@@ -35,27 +39,23 @@ export const getUserSubscriptionHandler = async ({ ctx, input }: Params<GetUserS
  */
 export const addUserSubscriptionHandler = async ({ ctx, input }: Params<AddUserSubscriptionInputType>) => {
   try {
+    const handlerId = 'addUserSubscriptionHandler';
     const { userId, subscriptionPlanId, frequency, startsAt, endsAt, renewsAt } = input;
 
     // Check if user exist
     const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!userResponse) {
-      const message = 'addUserSubscription: user not found';
-      throw new TRPCError({
-        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
-        message,
-      });
-    }
+
+    if (userResponse.result.status === Response.ERROR) return userResponse;
 
     // Check if user already has a subscription
     // TODO: Tuve que quitar el user.subscription porque no existe en el tipo de dato de user
-    if (userResponse.result.user !== null) {
-      const message = 'addUserSubscription: user already has a subscription';
-      throw new TRPCError({
-        code: TRPCErrorCode.BAD_REQUEST,
-        message,
-      });
-    }
+    if (userResponse.result.user !== null)
+      return errorResponse(
+        domain,
+        handlerId,
+        ErrorCodes.Subscription.UserAlreadyHasSubscription,
+        ErrorMessages.Subscription.UserAlreadyHasSubscription,
+      );
 
     // Add subscription
     const subscription = await ctx.prisma.subscription.create({
@@ -96,32 +96,28 @@ export const addUserSubscriptionHandler = async ({ ctx, input }: Params<AddUserS
  */
 export const updateUserSubscriptionHandler = async ({ ctx, input }: Params<UpdateUserSubscriptionInputType>) => {
   try {
+    const handlerId = 'updateUserSubscriptionHandler';
     const { userId, subscriptionPlanId, frequency, startsAt, endsAt, renewsAt, isActive } = input;
 
     // Check if user exist
     const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!userResponse) {
-      const message = 'updateUserSubscription: user not found';
-      throw new TRPCError({
-        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
-        message,
-      });
-    }
+    if (userResponse.result.status === Response.ERROR) return userResponse;
 
     // Check if user already has a subscription
     // TODO: Tuve que quitar el user.subscription porque no existe en el tipo de dato de user
-    if (!userResponse.result.user) {
-      const message = 'updateUserSubscription: user has no subscription';
-      throw new TRPCError({
-        code: TRPCErrorCode.BAD_REQUEST,
-        message,
-      });
-    }
+    if (userResponse.result.user !== null)
+      return errorResponse(
+        domain,
+        handlerId,
+        ErrorCodes.Subscription.UserAlreadyHasSubscription,
+        ErrorMessages.Subscription.UserAlreadyHasSubscription,
+      );
 
     // Update subscription
+    const user = userResponse.result.user;
     const subscription = await ctx.prisma.subscription.update({
       where: {
-        userId: userResponse.result.user.id,
+        userId: user,
       },
       data: {
         subscriptionPlan: {

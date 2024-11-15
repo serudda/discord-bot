@@ -1,8 +1,12 @@
-import { AccountError } from '@discord-bot/error-handler';
+import type { AccountResponse, AccountsResponse} from '../common';
 import { Response, TRPCErrorCode, type Params } from '../common';
 import { type CreateAccountInputType, type GetAllProvidersByUserIdInputType } from '../schema/account.schema';
+import { ErrorCodes, ErrorMessages, errorResponse } from '../services';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+// Id domain to handle errors
+const domain = 'ACCOUNT';
 
 /**
  * Get all providers by user id.
@@ -11,12 +15,62 @@ import { z } from 'zod';
  * @param input GetAllProvidersByUserIdInputType.
  * @returns Account[]
  */
-export const getAllProvidersByUserIdHandler = async ({ ctx, input }: Params<GetAllProvidersByUserIdInputType>) => {
-  return ctx.prisma.account.findMany({
-    where: {
-      userId: input.userId,
-    },
-  });
+export const getAllProvidersByUserIdHandler = async ({
+  ctx,
+  input,
+}: Params<GetAllProvidersByUserIdInputType>): Promise<AccountsResponse> => {
+  const handlerId = 'getAllProvidersByUserIdHandler';
+
+  try {
+    const { userId } = input;
+    const accounts = await ctx.prisma.account.findMany({
+      where: {
+        userId,
+      },
+    });
+
+    // Check if account exists
+    if (!accounts || accounts.length === 0)
+      return errorResponse(
+        domain,
+        handlerId,
+        ErrorCodes.Account.DiscordUserNotFound,
+        ErrorMessages.Account.DiscordUserNotFound,
+      );
+
+    return {
+      result: {
+        status: Response.SUCCESS,
+        accounts,
+      },
+    };
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      throw new TRPCError({
+        code: TRPCErrorCode.BAD_REQUEST,
+        message: ErrorMessages.Common.InvalidInput,
+      });
+    }
+
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message: ErrorMessages.User.UnAuthorized,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
+  }
 };
 
 /**
@@ -26,7 +80,11 @@ export const getAllProvidersByUserIdHandler = async ({ ctx, input }: Params<GetA
  * @param input CreateAccountInputType.
  * @returns Account.
  */
-export const createAccountHandler = async ({ ctx, input }: Params<CreateAccountInputType>) => {
+export const createAccountHandler = async ({
+  ctx,
+  input,
+}: Params<CreateAccountInputType>): Promise<AccountResponse> => {
+  const handlerId = 'createAccountHandler';
   try {
     const account = await ctx.prisma.account.create({
       data: {
@@ -40,14 +98,8 @@ export const createAccountHandler = async ({ ctx, input }: Params<CreateAccountI
     });
 
     // Check if account was created
-    if (!account) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: AccountError.AccountNotCreated,
-        },
-      };
-    }
+    if (!account)
+      return errorResponse(domain, handlerId, ErrorCodes.Account.NotCreated, ErrorMessages.Account.NotCreated);
 
     return {
       result: {
@@ -56,22 +108,18 @@ export const createAccountHandler = async ({ ctx, input }: Params<CreateAccountI
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = 'createAccount: invalid input';
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = 'createAccount: unauthorized';
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -80,5 +128,10 @@ export const createAccountHandler = async ({ ctx, input }: Params<CreateAccountI
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };

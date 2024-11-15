@@ -230,8 +230,7 @@ export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>)
       });
 
       // Check if card was removed from sender's collection
-      if (senderCardRemovedResponse?.result.status === Response.ERROR)
-        return senderCardRemovedResponse;
+      if (senderCardRemovedResponse?.result.status === Response.ERROR) return senderCardRemovedResponse;
 
       // Add card to recipient's collection
       const recipient = recipientResponse.result.user;
@@ -517,7 +516,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>): 
 
       const userCards: Array<UserCard> = [];
 
-      // Agregar tarjetas una por una y manejar errores
+      // Add cards to user's collection one by one
       for (const card of randomCards) {
         // Check if card is foil
         const isFoil = Math.random() < FOIL_PROBABILITY;
@@ -1029,8 +1028,7 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
         });
 
         // Check if card was added to user collection
-        if (addCardToCollectionResponse.result.status === Response.ERROR)
-          return addCardToCollectionResponse;
+        if (addCardToCollectionResponse.result.status === Response.ERROR) return addCardToCollectionResponse;
 
         // Decrease user gems
         await decreaseUserGemsHandler({

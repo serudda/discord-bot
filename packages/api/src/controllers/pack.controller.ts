@@ -1,6 +1,17 @@
-import type { Card } from '@discord-bot/db';
-import { CardError, CommonError, PackError, UserError } from '@discord-bot/error-handler';
-import { Response, TRPCErrorCode, type Ctx, type Params } from '../common';
+import type { PackCard, UserCard } from '@discord-bot/db';
+import type {
+  BuyPackResponse,
+  OpenPackResponse,
+  PackWithCardsResponse} from '../common';
+import {
+  Response,
+  TRPCErrorCode,
+  type AmountOfPacksResponse,
+  type Ctx,
+  type Params,
+  type UserPackResponse,
+  type UserPacksResponse,
+} from '../common';
 import type {
   BuyPackInputType,
   CreatePackInputType,
@@ -12,63 +23,57 @@ import type {
   GetUserPackByIdInputType,
   OpenPackInputType,
 } from '../schema/pack.schema';
+import { ErrorCodes, ErrorMessages, errorResponse } from '../services';
 import { addCardToCollectionHandler, getCardsByPackIdHandler, getRandomCardsHandler } from './card.controller';
 import { getCurrentSeasonHandler } from './season.controller';
 import { decreaseUserCoinsHandler, getUserByDiscordIdHandler, getUserByIdHandler } from './user.controller';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+// Id domain to handle errors
+const domain = 'PACK';
+
 /**
  * Get pack by ID.
  *
  * @param ctx Ctx.
  * @param input GetPackByIdInputType.
- * @returns Pack.
+ * @returns User Pack.
  */
-export const getPackByIdHandler = async ({ ctx, input }: Params<GetPackByIdInputType>) => {
+export const getPackByIdHandler = async ({ ctx, input }: Params<GetPackByIdInputType>): Promise<UserPackResponse> => {
   try {
+    const handlerId = 'getPackByIdHandler';
     const { packId } = input;
 
     // Get pack by ID
-    const pack = await ctx.prisma.pack.findUnique({
+    const userPack = await ctx.prisma.pack.findUnique({
       where: {
         id: packId,
       },
     });
 
     // Check if pack was found
-    if (!pack) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: PackError.PackNotFound,
-        },
-      };
-    }
+    if (!userPack) return errorResponse(domain, handlerId, ErrorCodes.User.NoUserPack, ErrorMessages.User.NoUserPack);
 
     return {
       result: {
         status: Response.SUCCESS,
-        pack,
+        userPack,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -77,6 +82,11 @@ export const getPackByIdHandler = async ({ ctx, input }: Params<GetPackByIdInput
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -87,8 +97,12 @@ export const getPackByIdHandler = async ({ ctx, input }: Params<GetPackByIdInput
  * @param input GetAllPacksByUserIdInputType.
  * @returns Packs.
  */
-export const getAllPacksByUserIdHandler = async ({ ctx, input }: Params<GetAllPacksByUserIdInputType>) => {
+export const getAllPacksByUserIdHandler = async ({
+  ctx,
+  input,
+}: Params<GetAllPacksByUserIdInputType>): Promise<UserPacksResponse> => {
   try {
+    const handlerId = 'getAllPacksByUserIdHandler';
     const { userId } = input;
 
     // Get packs by user ID
@@ -99,38 +113,28 @@ export const getAllPacksByUserIdHandler = async ({ ctx, input }: Params<GetAllPa
     });
 
     // Check if packs were found
-    if (!packs || packs.length === 0) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: PackError.UserPacksNotFound,
-        },
-      };
-    }
+    if (!packs || packs.length === 0)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUserPacks, ErrorMessages.User.NoUserPacks);
 
     return {
       result: {
         status: Response.SUCCESS,
-        packs,
+        userPacks: packs,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -139,6 +143,11 @@ export const getAllPacksByUserIdHandler = async ({ ctx, input }: Params<GetAllPa
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -149,20 +158,16 @@ export const getAllPacksByUserIdHandler = async ({ ctx, input }: Params<GetAllPa
  * @param input GetAmountOfPacksByUserIdInputType.
  * @returns Amount of user's packs.
  */
-export const getAmountOfPacksByUserIdHandler = async ({ ctx, input }: Params<GetAmountOfPacksByUserIdInputType>) => {
+export const getAmountOfPacksByUserIdHandler = async ({
+  ctx,
+  input,
+}: Params<GetAmountOfPacksByUserIdInputType>): Promise<AmountOfPacksResponse> => {
   try {
     const { userId } = input;
 
     // Check if user exists
-    const user = await getUserByIdHandler({ ctx, input: { id: userId } });
-    if (!user || !user.result || user.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: UserError.UserNotFound,
-        },
-      };
-    }
+    const userResponse = await getUserByIdHandler({ ctx, input: { id: userId } });
+    if (userResponse.result.status === Response.ERROR) return userResponse as AmountOfPacksResponse;
 
     // Get amount of packs by user ID
     const amountOfPacks = await ctx.prisma.pack.count({
@@ -178,22 +183,18 @@ export const getAmountOfPacksByUserIdHandler = async ({ ctx, input }: Params<Get
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -202,6 +203,11 @@ export const getAmountOfPacksByUserIdHandler = async ({ ctx, input }: Params<Get
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -212,56 +218,44 @@ export const getAmountOfPacksByUserIdHandler = async ({ ctx, input }: Params<Get
  * @param input GetUserPackByIdInputType.
  * @returns User pack.
  */
-export const getUserPackByIdHandler = async ({ ctx, input }: Params<GetUserPackByIdInputType>) => {
+export const getUserPackByIdHandler = async ({
+  ctx,
+  input,
+}: Params<GetUserPackByIdInputType>): Promise<UserPackResponse> => {
   try {
+    const handlerId = 'getUserPackByIdHandler';
     const { userId, packId } = input;
 
     // Get pack by ID
-    const response = await getPackByIdHandler({ ctx, input: { packId } });
+    const userPackResponse = await getPackByIdHandler({ ctx, input: { packId } });
 
     // Check if pack was found
-    if (!response || !response.result.pack || response.result.status === Response.ERROR) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: response?.result.message,
-        },
-      };
-    }
+    if (userPackResponse.result.status === Response.ERROR) return userPackResponse;
 
     // Check if pack belongs to user
-    if (response.result.pack.userId !== userId) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: PackError.UserPackNotFound,
-        },
-      };
-    }
+    const userPack = userPackResponse.result.userPack;
+    if (userPack.userId !== userId)
+      return errorResponse(domain, handlerId, ErrorCodes.User.NoUserPack, ErrorMessages.User.NoUserPack);
 
     return {
       result: {
         status: Response.SUCCESS,
-        pack: response.result.pack,
+        userPack,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -270,6 +264,11 @@ export const getUserPackByIdHandler = async ({ ctx, input }: Params<GetUserPackB
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -278,14 +277,15 @@ export const getUserPackByIdHandler = async ({ ctx, input }: Params<GetUserPackB
  *
  * @param ctx Ctx.
  * @param input CreatePackInputType.
- * @returns Pack.
+ * @returns User Pack.
  */
-export const createPackHandler = async ({ ctx, input }: Params<CreatePackInputType>) => {
+export const createPackHandler = async ({ ctx, input }: Params<CreatePackInputType>): Promise<UserPackResponse> => {
   try {
+    const handlerId = 'createPackHandler';
     const { seasonId, userId } = input;
 
     // Create pack
-    const pack = await ctx.prisma.pack.create({
+    const userPack = await ctx.prisma.pack.create({
       data: {
         seasonId,
         userId,
@@ -293,38 +293,28 @@ export const createPackHandler = async ({ ctx, input }: Params<CreatePackInputTy
     });
 
     // Check if pack was created
-    if (!pack) {
-      return {
-        result: {
-          status: Response.ERROR,
-          message: PackError.NoCreatePack,
-        },
-      };
-    }
+    if (!userPack)
+      return errorResponse(domain, handlerId, ErrorCodes.Pack.NoCreatePack, ErrorMessages.Pack.NoCreatePack);
 
     return {
       result: {
         status: Response.SUCCESS,
-        pack,
+        userPack,
       },
     };
   } catch (error: unknown) {
-    // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
-        message,
+        message: ErrorMessages.Common.InvalidInput,
       });
     }
 
-    // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message,
+          message: ErrorMessages.User.UnAuthorized,
         });
       }
 
@@ -333,6 +323,11 @@ export const createPackHandler = async ({ ctx, input }: Params<CreatePackInputTy
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: ErrorMessages.Common.Unknown,
+    });
   }
 };
 
@@ -343,28 +338,25 @@ export const createPackHandler = async ({ ctx, input }: Params<CreatePackInputTy
  * @param input CreatePackWithCardsInputType.
  * @returns Pack with cards.
  */
-export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePackWithCardsInputType>) => {
+export const createPackWithCardsHandler = async ({
+  ctx,
+  input,
+}: Params<CreatePackWithCardsInputType>): Promise<PackWithCardsResponse> => {
   try {
+    const handlerId = 'createPackWithCardsHandler';
     const { seasonId, userId } = input;
     const CARD_AMOUNT_PACK = await ctx.configService.getGlobalConfig<number>('CARD_AMOUNT_PACK', 3);
     const FOIL_PROBABILITY = await ctx.configService.getGlobalConfig<number>('FOIL_PROBABILITY', 0.04);
 
-    const executePackCreation = async (prisma: typeof ctx.prisma) => {
+    const executePackCreation = async (prisma: typeof ctx.prisma): Promise<PackWithCardsResponse> => {
       // Create pack
-      const newPackResponse = await createPackHandler({
+      const newUserPackResponse = await createPackHandler({
         ctx: { ...ctx, prisma },
         input: { seasonId, userId },
       });
 
       // Check if pack was created
-      if (!newPackResponse || !newPackResponse.result || newPackResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: newPackResponse?.result.message,
-          },
-        };
-      }
+      if (newUserPackResponse.result.status === Response.ERROR) return newUserPackResponse as PackWithCardsResponse;
 
       // Get random cards
       const randomCardsResponse = await getRandomCardsHandler({
@@ -375,44 +367,36 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
       });
 
       // Check if random cards were found
-      if (!randomCardsResponse || !randomCardsResponse.result || randomCardsResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: randomCardsResponse?.result.message,
-          },
-        };
-      }
+      if (randomCardsResponse.result.status === Response.ERROR) return randomCardsResponse as PackWithCardsResponse;
 
       // Add cards to pack
-      const packId = newPackResponse?.result.pack?.id as string;
-      const cards = randomCardsResponse?.result.cards as Array<Card>;
+      const userPackId = newUserPackResponse?.result.userPack.id;
+      const cards = randomCardsResponse?.result.cards;
       const cardsInPack = cards.map((card) => ({
-        packId,
+        packId: userPackId,
         cardId: card.id,
         isFoil: Math.random() < FOIL_PROBABILITY,
       }));
 
       // Create cards in pack
-      const newPackCards = await prisma.packCard.createMany({
+      const newPackCards = (await prisma.packCard.createMany({
         data: cardsInPack,
-      });
+      })) as unknown as Array<PackCard>;
 
       // Check if cards were added to pack
-      if (!newPackCards) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: PackError.NoCreatePackCards,
-          },
-        };
-      }
+      if (!newPackCards)
+        return errorResponse(
+          domain,
+          handlerId,
+          ErrorCodes.Pack.NoCreatePackCards,
+          ErrorMessages.Pack.NoCreatePackCards,
+        );
 
+      const pack = newUserPackResponse.result.userPack;
       return {
         result: {
           status: Response.SUCCESS,
-          pack: newPackResponse.result.pack,
-          cards: newPackCards,
+          pack,
         },
       };
     };
@@ -425,7 +409,7 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
+      const message = ErrorMessages.Common.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
         message,
@@ -435,7 +419,7 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
-        const message = UserError.UnAuthorized;
+        const message = ErrorMessages.User.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
           message,
@@ -462,8 +446,9 @@ export const createPackWithCardsHandler = async ({ ctx, input }: Params<CreatePa
  * @param input BuyPackInputType.
  * @returns
  */
-export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) => {
+export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>): Promise<BuyPackResponse> => {
   try {
+    const handlerId = 'buyPackHandler';
     const { discordId } = input;
     const PACK_PRICE = await ctx.configService.getGlobalConfig<number>('PACK_PRICE', 100);
 
@@ -475,25 +460,12 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if user was found
-      if (!userResponse || !userResponse.result || userResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: userResponse?.result.message,
-          },
-        };
-      }
+      if (userResponse.result.status === Response.ERROR) return userResponse as BuyPackResponse;
 
       // Check if user has enough coins
       const user = userResponse.result.user;
-      if (!user || user.coins < PACK_PRICE) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: UserError.NoCoins,
-          },
-        };
-      }
+      if (!user || user.coins < PACK_PRICE)
+        return errorResponse(domain, handlerId, ErrorCodes.User.NoCoins, ErrorMessages.User.NoCoins);
 
       // Get current season
       const seasonResponse = await getCurrentSeasonHandler({
@@ -502,19 +474,12 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if season was found
-      if (!seasonResponse || !seasonResponse.result || seasonResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: seasonResponse?.result.message,
-          },
-        };
-      }
+      if (seasonResponse.result.status === Response.ERROR) return seasonResponse as BuyPackResponse;
 
       // Create pack with cards
       const season = seasonResponse.result.season;
       const userId = user.id;
-      const seasonId = season?.id as string;
+      const seasonId = season?.id;
 
       const newPackResponse = await createPackWithCardsHandler({
         ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
@@ -522,14 +487,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if pack with cards was created
-      if (!newPackResponse || !newPackResponse.result || newPackResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: newPackResponse?.result.message,
-          },
-        };
-      }
+      if (newPackResponse.result.status === Response.ERROR) return newPackResponse as BuyPackResponse;
 
       // Decrease user coins
       const updateUserResponse = await decreaseUserCoinsHandler({
@@ -538,14 +496,7 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if user coins were decreased
-      if (!updateUserResponse || !updateUserResponse.result || updateUserResponse.result.status === Response.ERROR) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: updateUserResponse?.result.message,
-          },
-        };
-      }
+      if (updateUserResponse.result.status === Response.ERROR) return updateUserResponse as BuyPackResponse;
 
       // Get amount of packs by user ID
       const amountOfPacksResponse = await getAmountOfPacksByUserIdHandler({
@@ -554,38 +505,48 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
       });
 
       // Check if amount of packs was found
-      if (
-        !amountOfPacksResponse ||
-        !amountOfPacksResponse.result ||
-        amountOfPacksResponse.result.status === Response.ERROR
-      ) {
-        return {
-          result: {
-            status: Response.ERROR,
-            message: amountOfPacksResponse?.result.message,
-          },
-        };
-      }
+      if (amountOfPacksResponse.result.status === Response.ERROR) return amountOfPacksResponse as BuyPackResponse;
 
+      const amountOfPacks = amountOfPacksResponse.result.amountOfPacks;
+      const coins = updateUserResponse.result.user?.coins;
       return {
         result: {
           status: Response.SUCCESS,
-          amountOfPacks: amountOfPacksResponse.result.amountOfPacks,
-          coins: updateUserResponse.result.user?.coins,
+          amountOfPacks,
+          coins,
         },
       };
     });
   } catch (error: unknown) {
-    console.error('**TRPC ERROR**', error);
-
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
+      const message = ErrorMessages.Common.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
         message,
       });
     }
+
+    // TRPC error (Custom error)
+    if (error instanceof TRPCError) {
+      if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        const message = ErrorMessages.User.UnAuthorized;
+        throw new TRPCError({
+          code: TRPCErrorCode.UNAUTHORIZED,
+          message,
+        });
+      }
+
+      throw new TRPCError({
+        code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+        message: error.message,
+      });
+    }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: error instanceof Error ? error.message : 'An unexpected error occurred',
+    });
   }
 };
 
@@ -596,116 +557,84 @@ export const buyPackHandler = async ({ ctx, input }: Params<BuyPackInputType>) =
  * @param input OpenPackInputType.
  * @returns Pack.
  */
-export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>) => {
+export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>): Promise<OpenPackResponse> => {
+  const handlerId = 'openPackHandler';
   const { userId } = input;
 
   try {
     return await ctx.prisma.$transaction(
       async (prismaTransaction) => {
         // Get random pack
-        const randomPackResponse = await prismaTransaction.pack.findFirst({
+        const randomPack = await prismaTransaction.pack.findFirst({
           where: {
             userId,
           },
         });
 
         // Check if pack was found
-        if (!randomPackResponse) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: PackError.NoUserPack,
-            },
-          };
-        }
+        if (!randomPack)
+          return errorResponse(domain, handlerId, ErrorCodes.User.NoUserPack, ErrorMessages.User.NoUserPack);
 
         // Get cards by pack ID
         const cardsByPackIdResponse = await getCardsByPackIdHandler({
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-          input: { packId: randomPackResponse.id },
+          input: { packId: randomPack.id },
         });
 
         // Check if cards were found
-        if (
-          !cardsByPackIdResponse ||
-          !cardsByPackIdResponse.result ||
-          cardsByPackIdResponse.result.status === Response.ERROR
-        ) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: cardsByPackIdResponse?.result.message,
-            },
-          };
-        }
+        if (cardsByPackIdResponse.result.status === Response.ERROR) return cardsByPackIdResponse as OpenPackResponse;
 
         // Delete pack
         const deletePackResponse = await deletePackHandler({
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-          input: { packId: randomPackResponse.id },
+          input: { packId: randomPack.id },
         });
 
         // Check if pack was deleted
-        if (!deletePackResponse || !deletePackResponse.result || deletePackResponse.result.status === Response.ERROR) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: PackError.NoDeletePack,
-            },
-          };
-        }
+        if (deletePackResponse?.result.status === Response.ERROR) return deletePackResponse as OpenPackResponse;
 
         // Add cards to user's collection
-        const randomCards = cardsByPackIdResponse?.result.cards?.map((packCard) => {
+        const randomCards = cardsByPackIdResponse?.result.packCards?.map((packCard) => {
           return {
-            ...packCard.card,
+            ...packCard,
             isFoil: packCard.isFoil,
           };
         });
 
         // Check if random cards were found
-        if (!randomCards) {
-          return {
-            status: Response.ERROR,
-            message: CardError.CardsNotFound,
-          };
+        if (!randomCards)
+          return errorResponse(domain, handlerId, ErrorCodes.Card.NoCardsByPackId, ErrorMessages.Card.NoCardsByPackId);
+
+        // Add cards to user's collection
+        const userCards: Array<UserCard> = [];
+
+        // Add cards to user's collection one by one
+        for (const card of randomCards) {
+          // Add user card
+          const newAddedCardResponse = await addCardToCollectionHandler({
+            ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
+            input: {
+              userId,
+              cardId: card.id,
+              quantity: 1,
+              isFoil: card.isFoil,
+            },
+          });
+
+          // Check if card was added to user's collection
+          if (newAddedCardResponse.result.status === Response.ERROR) return newAddedCardResponse as OpenPackResponse;
+
+          userCards.push(newAddedCardResponse.result.userCard);
         }
-
-        const newUserCards = await Promise.all(
-          randomCards.map(async (card) => {
-            if (!card) return;
-
-            // Add user card
-            const newAddedCard = await addCardToCollectionHandler({
-              ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
-              input: {
-                userId,
-                cardId: card.id,
-                quantity: 1,
-                isFoil: card.isFoil,
-              },
-            });
-
-            // Check if card was added to user's collection
-            if (!newAddedCard || newAddedCard.result.status === Response.ERROR) {
-              return {
-                status: Response.ERROR,
-                message: CardError.NoAddCardToUserCollection,
-              };
-            }
-            return newAddedCard.result.userCard;
-          }),
-        );
 
         // Check if cards were added to user's collection
-        if (!newUserCards) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: CardError.NoAddCardToUserCollection,
-            },
-          };
-        }
+        if (!userCards)
+          return errorResponse(
+            domain,
+            handlerId,
+            ErrorCodes.Card.NoAddCardToUserCollection,
+            ErrorMessages.Card.NoAddCardToUserCollection,
+          );
 
         // Get amount of packs by user ID
         const amountOfPacksResponse = await getAmountOfPacksByUserIdHandler({
@@ -714,24 +643,13 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
         });
 
         // Check if amount of packs was found
-        if (
-          !amountOfPacksResponse ||
-          !amountOfPacksResponse.result ||
-          amountOfPacksResponse.result.status === Response.ERROR
-        ) {
-          return {
-            result: {
-              status: Response.ERROR,
-              message: amountOfPacksResponse?.result.message,
-            },
-          };
-        }
+        if (amountOfPacksResponse.result.status === Response.ERROR) return amountOfPacksResponse as OpenPackResponse;
 
         // Return random cards
         return {
           result: {
             status: Response.SUCCESS,
-            newUserCards,
+            newUserCards: userCards,
             amountOfPacks: amountOfPacksResponse.result.amountOfPacks,
           },
         };
@@ -742,11 +660,9 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
       },
     );
   } catch (error: unknown) {
-    console.error('**TRPC ERROR**', error);
-
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
+      const message = ErrorMessages.Common.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
         message,
@@ -756,9 +672,10 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        const message = ErrorMessages.User.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message,
         });
       }
 
@@ -767,6 +684,11 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: error instanceof Error ? error.message : 'An unexpected error occurred',
+    });
   }
 };
 
@@ -777,8 +699,9 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
  * @param input DeletePackInputType.
  * @returns Pack.
  */
-export const deletePackHandler = async ({ ctx, input }: Params<DeletePackInputType>) => {
+export const deletePackHandler = async ({ ctx, input }: Params<DeletePackInputType>): Promise<UserPackResponse> => {
   try {
+    const handlerId = 'deletePackHandler';
     const { packId } = input;
 
     // Delete pack
@@ -788,16 +711,20 @@ export const deletePackHandler = async ({ ctx, input }: Params<DeletePackInputTy
       },
     });
 
+    // Check if pack was deleted
+    if (!deletedPack)
+      return errorResponse(domain, handlerId, ErrorCodes.Pack.NoDeletePack, ErrorMessages.Pack.NoDeletePack);
+
     return {
       result: {
         status: Response.SUCCESS,
-        pack: deletedPack,
+        userPack: deletedPack,
       },
     };
   } catch (error: unknown) {
     // Zod error (Invalid input)
     if (error instanceof z.ZodError) {
-      const message = CommonError.InvalidInput;
+      const message = ErrorMessages.Common.InvalidInput;
       throw new TRPCError({
         code: TRPCErrorCode.BAD_REQUEST,
         message,
@@ -807,9 +734,10 @@ export const deletePackHandler = async ({ ctx, input }: Params<DeletePackInputTy
     // TRPC error (Custom error)
     if (error instanceof TRPCError) {
       if (error.code === TRPCErrorCode.UNAUTHORIZED) {
+        const message = ErrorMessages.User.UnAuthorized;
         throw new TRPCError({
           code: TRPCErrorCode.UNAUTHORIZED,
-          message: UserError.UnAuthorized,
+          message,
         });
       }
 
@@ -818,5 +746,10 @@ export const deletePackHandler = async ({ ctx, input }: Params<DeletePackInputTy
         message: error.message,
       });
     }
+
+    throw new TRPCError({
+      code: TRPCErrorCode.INTERNAL_SERVER_ERROR,
+      message: error instanceof Error ? error.message : 'An unexpected error occurred',
+    });
   }
 };
