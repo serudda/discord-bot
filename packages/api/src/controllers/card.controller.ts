@@ -1239,6 +1239,9 @@ export const addCardToCollectionHandler = async ({
 
     // Add or update user card
     const user = userResponse.result.user;
+    // TODO: Continuar aqui
+    console.log('user', user);
+    console.log('cardId', cardId);
     const userCard = await ctx.prisma.userCard.upsert({
       where: {
         userId_cardId_isFoil: {
@@ -1262,6 +1265,8 @@ export const addCardToCollectionHandler = async ({
         card: true,
       },
     });
+
+    console.log('userCard', userCard);
 
     // Check if card was added to user
     if (!userCard)

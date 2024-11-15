@@ -36,6 +36,8 @@ const command = {
       const username = userResponse?.result.user?.username;
       const openPackResponse = await api.pack.openPack.mutate({ userId });
 
+      console.log('openPackResponse.result', openPackResponse.result);
+
       if (openPackResponse?.result?.status === Response.ERROR) {
         await interaction.editReply(openPackResponse.result.error.message);
         return;

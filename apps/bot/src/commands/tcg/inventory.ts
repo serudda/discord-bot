@@ -25,17 +25,6 @@ const command = {
         return;
       }
 
-      // Check if user has coins
-      if (
-        !getInventoryResponse?.result ||
-        !getInventoryResponse.result.coins ||
-        !getInventoryResponse.result.gems ||
-        !getInventoryResponse.result.packs
-      ) {
-        await interaction.editReply(ErrorMessages.User.NoCoins);
-        return;
-      }
-
       const coinEmoji = await configService.getGlobalConfig<string>('COIN_EMOJI', ':coin:');
       const gemEmoji = await configService.getGlobalConfig<string>('GEM_EMOJI', ':gem:');
       const boosterEmoji = await configService.getGlobalConfig<string>('BOOSTER_EMOJI', ':booster:');

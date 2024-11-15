@@ -568,6 +568,8 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
           },
         });
 
+        console.log('randomPack', randomPack);
+
         // Check if pack was found
         if (!randomPack)
           return errorResponse(domain, handlerId, ErrorCodes.User.NoUserPack, ErrorMessages.User.NoUserPack);
@@ -578,6 +580,8 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
           input: { packId: randomPack.id },
         });
 
+        console.log('cardsByPackIdResponse', cardsByPackIdResponse);
+
         // Check if cards were found
         if (cardsByPackIdResponse.result.status === Response.ERROR) return cardsByPackIdResponse as OpenPackResponse;
 
@@ -586,6 +590,8 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
           input: { packId: randomPack.id },
         });
+
+        console.log('deletePackResponse', deletePackResponse);
 
         // Check if pack was deleted
         if (deletePackResponse?.result.status === Response.ERROR) return deletePackResponse as OpenPackResponse;
@@ -597,6 +603,8 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
             isFoil: packCard.isFoil,
           };
         });
+
+        console.log('randomCards', randomCards);
 
         // Check if random cards were found
         if (!randomCards)
@@ -618,11 +626,15 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
             },
           });
 
+          console.log('newAddedCardResponse', newAddedCardResponse);
+
           // Check if card was added to user's collection
           if (newAddedCardResponse.result.status === Response.ERROR) return newAddedCardResponse as OpenPackResponse;
 
           userCards.push(newAddedCardResponse.result.userCard);
         }
+
+        console.log('userCards', userCards);
 
         // Check if cards were added to user's collection
         if (!userCards)
@@ -638,6 +650,8 @@ export const openPackHandler = async ({ ctx, input }: Params<OpenPackInputType>)
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
           input: { userId },
         });
+
+        console.log('amountOfPacksResponse', amountOfPacksResponse);
 
         // Check if amount of packs was found
         if (amountOfPacksResponse.result.status === Response.ERROR) return amountOfPacksResponse as OpenPackResponse;
