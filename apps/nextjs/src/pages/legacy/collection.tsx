@@ -1,6 +1,3 @@
-import { useEffect, useState } from 'react';
-import { FilterMode, SortOrder } from '~/common';
-import { CategorySection, HolographicCard, UserSidebar } from '~/components';
 import { api } from '~/utils';
 import { useRouter } from 'next/router';
 
@@ -8,15 +5,17 @@ const UserCollectionPage = () => {
   const router = useRouter();
   const { userId } = router.query;
   const { data: userData } = api.user.getById.useQuery({ id: userId as string });
-  const { data: collectionData } = api.card.getCollection.useQuery({ userId: userId as string });
+  // const { data: collectionData } = api.card.getCollection.useQuery({ userId: userId as string });
   const { data: allCardsData } = api.card.getAllCards.useQuery({});
 
+  /*
   const allCards = allCardsData?.result?.cards ?? [];
   const userCollection = collectionData?.result?.collection ?? [];
   const [showUnownedCards, setShowUnownedCards] = useState(false);
   const [activeCategory, setActiveCategory] = useState<FilterMode>(FilterMode.Rarity);
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Ascending);
   const [isMounted, setIsMounted] = useState(false);
+
 
   useEffect(() => {
     setIsMounted(true);
@@ -49,6 +48,9 @@ const UserCollectionPage = () => {
       </div>
     </main>
   );
+  */
+
+  return null;
 };
 
 export default UserCollectionPage;

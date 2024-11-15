@@ -1,6 +1,5 @@
 import type { Card, UserCard } from '@discord-bot/db';
-import type {
-  UserCardWithCardResponse} from '../common';
+import type { UserCardWithCardResponse } from '../common';
 import {
   getRandomRarity,
   getSortingOptions,
@@ -985,7 +984,10 @@ export const getRandomCardsHandler = async ({
  * @param input WonderPickInputType.
  * @returns Random Card got by wonder pick.
  */
-export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputType>): Promise<UserCardResponse> => {
+export const wonderPickHandler = async ({
+  ctx,
+  input,
+}: Params<WonderPickInputType>): Promise<UserCardWithCardResponse> => {
   try {
     const handlerId = 'wonderPickHandler';
     const { discordId, position, cards } = input;
@@ -1003,7 +1005,7 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
           input: { discordId },
         });
 
-        if (userResponse.result.status === Response.ERROR) return userResponse as UserCardResponse;
+        if (userResponse.result.status === Response.ERROR) return userResponse as UserCardWithCardResponse;
 
         // Check if user has enough gems
         const userGems = userResponse?.result.gems;
@@ -1020,7 +1022,7 @@ export const wonderPickHandler = async ({ ctx, input }: Params<WonderPickInputTy
           ctx: { ...ctx, prisma: prismaTransaction } as Ctx,
           input: { id: selectedCard as string },
         });
-        if (cardResponse.result.status === Response.ERROR) return cardResponse as UserCardResponse;
+        if (cardResponse.result.status === Response.ERROR) return cardResponse as UserCardWithCardResponse;
 
         // Add card to user collection
         const randomCard = cardResponse.result.card;

@@ -1,4 +1,3 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
 import { api, Response } from '~/api';
 import { getImage } from '~/utils';
 import { type UserCardWithCard } from '../../commands/tcg/open-pack';
@@ -46,12 +45,12 @@ export const wonderPickButton = ({ interaction, userCards }: WonderPickOptions):
         // Get user gems
         const discordId = buttonInteraction.user.id;
         const userGemsResponse = await api.user.getGems.query({ discordId });
-        if (!userGemsResponse?.result || userGemsResponse?.result?.status === Response.ERROR) {
-          await buttonInteraction.editReply(ErrorMessages[userGemsResponse?.result.message as ErrorCode]);
+        if (userGemsResponse?.result?.status === Response.ERROR) {
+          await buttonInteraction.editReply(userGemsResponse?.result.error);
           return;
         }
 
-        const userGems = userGemsResponse?.result.gems as number;
+        const userGems = userGemsResponse?.result.gems;
 
         // Check if user has enough gems
         if (userGems < 1) {

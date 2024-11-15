@@ -1,7 +1,7 @@
-import { api, Rarity } from '~/utils/api';
 import { type NextPage } from 'next';
 
 const Home: NextPage = () => {
+  /*
   const { data, error, isLoading } = api.card.getAllCardsByRarity.useQuery({ rarity: Rarity.UNCOMMON });
 
   if (isLoading) {
@@ -13,6 +13,7 @@ const Home: NextPage = () => {
   if (error) {
     return <div>Error: {error.message}</div>;
   }
+  
 
   return (
     <>
@@ -31,6 +32,10 @@ const Home: NextPage = () => {
       </main>
     </>
   );
+
+  */
+
+  return null;
 };
 
 export default Home;

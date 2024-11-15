@@ -1,5 +1,3 @@
-import type { ErrorCode } from '@discord-bot/error-handler';
-import { ErrorMessages } from '@discord-bot/error-handler';
 import { api, Response } from '~/api';
 import { BACK_IMG_URL, BG_IMG_URL, FOIL_IMG_URL, RESULT_WONDER_PICK_IMG_NAME } from '~/common';
 import { mergeImages } from '~/utils';
@@ -35,19 +33,12 @@ export const wonderPickSelect = ({ interaction, userCards }: WonderPickSelectOpt
         });
 
         // Check if the wonder pick failed
-        if (!wonderPickResponse?.result || wonderPickResponse?.result?.status === Response.ERROR) {
-          await selectInteraction.editReply(ErrorMessages[wonderPickResponse?.result?.message as ErrorCode]);
+        if (wonderPickResponse.result.status === Response.ERROR) {
+          await selectInteraction.editReply(wonderPickResponse.result.error);
           return;
         }
 
         const selectedUserCard = wonderPickResponse?.result.userCard;
-        if (!selectedUserCard) {
-          await selectInteraction.editReply({
-            content: 'La carta seleccionada no está disponible.',
-          });
-          return;
-        }
-
         const imageUrls: Array<string> = [];
         const foilFlags: Array<boolean> = [];
 

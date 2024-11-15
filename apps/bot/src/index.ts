@@ -13,7 +13,7 @@ void (async () => {
     await loadCommands(client);
     await loadEvents(client);
     await client.login(process.env.DISCORD_TOKEN);
-  } catch {
-    console.error('Failed to log in.');
+  } catch (error) {
+    console.error('Failed to log in.', error);
   }
 })();

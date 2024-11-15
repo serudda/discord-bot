@@ -1,5 +1,4 @@
-import { DetailTradingCardModal } from '~/components';
-import { api, Response } from '~/utils';
+import { api } from '~/utils';
 import { useRouter } from 'next/router';
 
 const CollectionPage = () => {
@@ -12,6 +11,8 @@ const CollectionPage = () => {
   // Get current season
   const { data: seasonData } = api.season.getCurrentSeason.useQuery({});
 
+  /*
+
   // Get user season progress
   const { data: seasonProgressData } = api.user.getUserSeasonProgress.useQuery(
     { seasonId: seasonData?.result?.season?.id as string, userId: userData?.result?.user?.id as string },
@@ -22,13 +23,13 @@ const CollectionPage = () => {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
+      {/* Sidebar
       <aside className="w-80 bg-neutral-900 text-white p-4 border-r border-neutral-800 hidden md:block">
         <h2 className="text-lg font-bold mb-4">Filtros</h2>
         <div>Filtrar por rareza</div>
       </aside>
 
-      {/* Trading Card List */}
+      {/* Trading Card List
       <main className="flex-1 p-7">
         <div className="grid gap-9 grid-cols-1 auto-rows-auto sm:grid-cols-2 grid-flow-row-dense md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {seasonProgressData.result.progress?.cards?.map((item, index) => (
@@ -47,6 +48,9 @@ const CollectionPage = () => {
       </main>
     </div>
   );
+  */
+
+  return null;
 };
 
 export default CollectionPage;
