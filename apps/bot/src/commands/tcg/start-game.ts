@@ -1,5 +1,4 @@
-import { ErrorMessages, UserError, type ErrorCode } from '@discord-bot/error-handler';
-import { api, configService, Response } from '~/api';
+import { api, configService, ErrorMessages, Response } from '~/api';
 import { startGameMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
@@ -15,7 +14,7 @@ const command = {
 
       // Check if user exists
       if (!user.id) {
-        await interaction.editReply(ErrorMessages.DiscordUserNotFound);
+        await interaction.editReply(ErrorMessages.Account.DiscordUserNotFound);
         return;
       }
 
@@ -28,15 +27,8 @@ const command = {
       });
 
       if (response?.result.status === Response.ERROR) {
-        if (response.result.message === UserError.UserAlreadyExists) {
-          await interaction.editReply(
-            'Ya estas coleccionando cartas.\nPuedes usar el comando `/buy-pack` para comprar sobres de cartas.',
-          );
-          return;
-        } else {
-          await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
-          return;
-        }
+        await interaction.editReply(response.result.error.message);
+        return;
       }
 
       if (response?.result && response.result.coins) {
@@ -53,12 +45,12 @@ const command = {
         await interaction.editReply(msg);
         return;
       } else {
-        await interaction.editReply(ErrorMessages.Unknown);
+        await interaction.editReply(ErrorMessages.Common.Unknown);
         return;
       }
     } catch (error) {
-      if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
-      await interaction.editReply(ErrorMessages.Unknown);
+      if (error instanceof TRPCClientError) await interaction.editReply(error.message);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
       return;
     }
   },

@@ -1,5 +1,4 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '~/api';
+import { api, ErrorMessages, Response } from '~/api';
 import { collectionMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
@@ -23,13 +22,13 @@ const command = {
       // Check if user exists
       const discordId = interaction.options.get(Option.user)?.user?.id ?? interaction.user.id;
       if (!discordId) {
-        await interaction.editReply(ErrorMessages.UserNotFound);
+        await interaction.editReply(ErrorMessages.User.NoUser);
         return;
       }
 
       const response = await api.user.getByDiscordId.query({ discordId });
       if (response?.result.status === Response.ERROR) {
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+        await interaction.editReply(response.result.error.message);
         return;
       }
 
@@ -43,10 +42,10 @@ const command = {
       console.error('Error executing collection command:', error);
 
       if (error instanceof TRPCClientError) {
-        await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
+        await interaction.editReply(error.message);
         return;
       }
-      await interaction.editReply(ErrorMessages.Unknown);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
     }
   },
 };

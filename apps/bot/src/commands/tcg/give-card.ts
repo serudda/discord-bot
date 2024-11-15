@@ -1,13 +1,12 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '../../api';
-import { giveCoinsMsg } from '../../messages';
-import { formatMsg } from '../../utils';
+import { api, ErrorMessages, Response } from '~/api';
+import { giveCardMsg } from '~/messages';
+import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
 enum Option {
   user = 'usuario',
-  card = 'número de la carta',
+  cardNumber = 'numero',
 }
 
 const command = {
@@ -18,48 +17,49 @@ const command = {
       option.setName(Option.user).setDescription('Usuario al que deseas dar la carta').setRequired(true),
     )
     .addStringOption((option) =>
-      option.setName(Option.card).setDescription('Identificador de la carta que deseas dar').setRequired(true),
+      option.setName(Option.cardNumber).setDescription('Identificador de la carta que deseas dar').setRequired(true),
     ),
   execute: async (interaction: CommandInteraction) => {
     const senderId = interaction.user.id;
     const recipientId = interaction.options.get(Option.user, true).user?.id;
-    const cardNumber = interaction.options.get(Option.card, true).value as string;
-
-    console.log(cardNumber);
+    const cardNumber = interaction.options.get(Option.cardNumber, true).value as string;
 
     try {
       await interaction.deferReply();
 
       // Check if sender is the same as recipient
       if (senderId === recipientId) {
-        await interaction.editReply(ErrorMessages.GiveCardRecipientEqualsSender);
+        await interaction.editReply(ErrorMessages.User.GiveCardRecipientEqualsSender);
         return;
       }
 
       // Check if user exists
       if (!recipientId) {
-        await interaction.editReply(ErrorMessages.UserNotFound);
+        await interaction.editReply(ErrorMessages.User.NoUser);
         return;
       }
 
-      const response = await api.card.giveCoins.mutate({ recipientId, senderId, amount: 2 });
+      const response = await api.card.giveCard.mutate({ recipientId, senderId, cardNumber: parseInt(cardNumber) });
 
       if (response?.result.status === Response.ERROR) {
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+        await interaction.editReply(response.result.error.message);
         return;
       } else {
-        const msg = formatMsg(giveCoinsMsg.description, {
+        const userCard = response?.result.userCard;
+        const msg = formatMsg(giveCardMsg.description, {
           senderId,
           recipientId,
-          balance: response?.result.coins as number,
+          cardName: userCard.card.name,
+          cardNumber: response?.result.userCard?.card.cardNumber,
         });
         await interaction.editReply(msg);
       }
 
       return;
     } catch (error) {
-      if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
-      await interaction.editReply(ErrorMessages.Unknown);
+      console.log(error);
+      if (error instanceof TRPCClientError) await interaction.editReply(error.message);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
       return;
     }
   },

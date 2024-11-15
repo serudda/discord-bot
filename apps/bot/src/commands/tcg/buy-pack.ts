@@ -1,5 +1,4 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '~/api';
+import { api, ErrorMessages, Response } from '~/api';
 import { buyPackMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
@@ -14,12 +13,12 @@ const command = {
       await interaction.deferReply();
       const response = await api.pack.buyPack.mutate({ discordId });
 
-      if (response?.result?.status === Response.ERROR) {
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+      if (response.result.status === Response.ERROR) {
+        await interaction.editReply(response.result.error.message);
         return;
       }
 
-      const packs = response?.result.amountOfPacks as number;
+      const packs = response?.result.amountOfPacks;
       const msg = formatMsg(buyPackMsg.description, {
         discordId,
         packs,
@@ -28,7 +27,7 @@ const command = {
     } catch (error) {
       console.error('Error buying a pack', error);
       if (error instanceof TRPCClientError) await interaction.editReply(error);
-      await interaction.editReply(ErrorMessages.Unknown);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
     }
   },
 };

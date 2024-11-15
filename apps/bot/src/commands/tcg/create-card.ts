@@ -1,5 +1,4 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, rarities, Rarity, Response } from '../../api';
+import { api, ErrorMessages, rarities, Rarity, Response } from '~/api';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -36,22 +35,20 @@ const command = {
           imageUrl: `https://via.placeholder.com/${i}`,
           rarity: getRandomRarity(),
         });
-        if (response?.result.status === Response.ERROR)
-          await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+        if (response?.result.status === Response.ERROR) await interaction.editReply(response.result.error.message);
       }
 
-      if (response?.result.status === Response.ERROR)
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+      if (response?.result.status === Response.ERROR) await interaction.editReply(response.result.error.message);
 
-      if (response?.result && response.result.card) {
+      if (response?.result && response.result.status === Response.SUCCESS) {
         const response = `¡Has creado ${RANDOM_AMOUNT} cartas !\n`;
         await interaction.editReply(response);
       } else {
-        await interaction.editReply(ErrorMessages.NoCoins);
+        await interaction.editReply(ErrorMessages.User.NoCoins);
       }
     } catch (error) {
-      if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
-      await interaction.editReply(ErrorMessages.Unknown);
+      if (error instanceof TRPCClientError) await interaction.editReply(error.message);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
     }
   },
 };

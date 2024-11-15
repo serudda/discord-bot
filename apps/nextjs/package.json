@@ -16,7 +16,6 @@
   "dependencies": {
     "@discord-bot/api": "workspace:*",
     "@discord-bot/db": "workspace:*",
-    "@discord-bot/error-handler": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-hover-card": "^1.1.2",
     "@radix-ui/react-select": "^2.1.2",

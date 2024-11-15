@@ -134,3 +134,14 @@ export const getUserSeasonProgressInput = z.object({
   userId: z.string(),
 });
 export type GetUserSeasonProgressInputType = TypeOf<typeof getUserSeasonProgressInput>;
+
+/*------------------------------------*/
+
+export const getUserCardByNumberInput = z.object({
+  userId: z.string(),
+  cardNumber: z.number(),
+  isFoil: z.boolean().optional().default(false),
+});
+export type GetUserCardByNumberInputType = TypeOf<typeof getUserCardByNumberInput>;
+
+/*------------------------------------*/

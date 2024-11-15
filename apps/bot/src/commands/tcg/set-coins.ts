@@ -1,5 +1,4 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '../../api';
+import { api, ErrorMessages, Response } from '~/api';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -31,24 +30,25 @@ const command = {
 
       // Check if user exists
       if (!discordId) {
-        await interaction.editReply(ErrorMessages.UserNotFound);
+        await interaction.editReply(ErrorMessages.User.NoUser);
         return;
       }
 
-      const response = await api.card.setCoins.mutate({ discordId, amount: parseInt(coins) });
+      const setCoinResponse = await api.card.setCoins.mutate({ discordId, amount: parseInt(coins) });
 
-      if (response?.result?.status === Response.ERROR)
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+      if (setCoinResponse?.result?.status === Response.ERROR)
+        await interaction.editReply(setCoinResponse.result.error.message);
 
-      if (response?.result && response.result.coins) {
+      if (setCoinResponse?.result && setCoinResponse.result.status === Response.SUCCESS) {
+        const { coins } = setCoinResponse.result;
         const response = `🎉 ¡Has asignado ${coins} monedas a <@${discordId}>! 🎉\n`;
         await interaction.editReply(response);
       } else {
-        await interaction.editReply(ErrorMessages.NoCoins);
+        await interaction.editReply(ErrorMessages.User.NoCoins);
       }
     } catch (error) {
-      if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
-      await interaction.editReply(ErrorMessages.Unknown);
+      if (error instanceof TRPCClientError) await interaction.editReply(error.message);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
       return;
     }
   },

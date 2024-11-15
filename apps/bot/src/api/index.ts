@@ -37,5 +37,5 @@ export const api = createTRPCProxyClient<AppRouter>({
 
 export { type RouterInputs, type RouterOutputs } from '@discord-bot/api';
 export * from '@discord-bot/api/src/common';
-export { configService } from '@discord-bot/api/src/services/configService';
+export { configService, ErrorCodes, ErrorMessages } from '@discord-bot/api/src/services';
 export * from '@discord-bot/db/common';

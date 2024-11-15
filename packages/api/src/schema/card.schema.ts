@@ -74,6 +74,16 @@ export type WonderPickInputType = TypeOf<typeof wonderPickInput>;
 
 /*------------------------------------*/
 
+export const giveCardInput = z.object({
+  senderId: z.string(),
+  recipientId: z.string(),
+  cardNumber: z.number(),
+  isFoil: z.boolean().optional().default(false),
+});
+export type GiveCardInputType = TypeOf<typeof giveCardInput>;
+
+/*------------------------------------*/
+
 export const giveCoinsInput = z.object({
   senderId: z.string(),
   recipientId: z.string(),
@@ -124,5 +134,6 @@ export const removeCardFromCollectionInput = z.object({
   userId: z.string(),
   cardId: z.string(),
   quantity: z.number().optional().default(1),
+  isFoil: z.boolean().optional().default(false),
 });
 export type RemoveCardFromCollectionInputType = TypeOf<typeof removeCardFromCollectionInput>;

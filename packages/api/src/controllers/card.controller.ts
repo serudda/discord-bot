@@ -1,4 +1,6 @@
 import type { Card, UserCard } from '@discord-bot/db';
+import type {
+  UserCardWithCardResponse} from '../common';
 import {
   getRandomRarity,
   getSortingOptions,
@@ -166,7 +168,7 @@ export const createCardHandler = async ({ ctx, input }: Params<CreateCardInputTy
  * @param input GiveCardInputType.
  * @returns User's card.
  */
-export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>): Promise<UserCardResponse> => {
+export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>): Promise<UserCardWithCardResponse> => {
   try {
     const handlerId = 'giveCardHandler';
     const { senderId, recipientId, cardNumber, isFoil } = input;
@@ -188,7 +190,7 @@ export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>)
         input: { discordId: senderId },
       });
 
-      if (senderResponse.result.status === Response.ERROR) return senderResponse as UserCardResponse;
+      if (senderResponse.result.status === Response.ERROR) return senderResponse as UserCardWithCardResponse;
 
       // Get Recipient user by Discord Id on Account table
       const recipientResponse = await getUserByDiscordIdHandler({
@@ -196,7 +198,7 @@ export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>)
         input: { discordId: recipientId },
       });
 
-      if (recipientResponse.result.status === Response.ERROR) return recipientResponse as UserCardResponse;
+      if (recipientResponse.result.status === Response.ERROR) return recipientResponse as UserCardWithCardResponse;
 
       // Get sender's card
       const sender = senderResponse.result.user;
@@ -206,7 +208,7 @@ export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>)
       });
 
       // Check if sender has the card
-      if (senderCardResponse?.result.status === Response.ERROR) return senderCardResponse;
+      if (senderCardResponse?.result.status === Response.ERROR) return senderCardResponse as UserCardWithCardResponse;
 
       // Check if sender has enough cards
       const senderCard = senderCardResponse?.result.userCard;
@@ -230,7 +232,8 @@ export const giveCardHandler = async ({ ctx, input }: Params<GiveCardInputType>)
       });
 
       // Check if card was removed from sender's collection
-      if (senderCardRemovedResponse?.result.status === Response.ERROR) return senderCardRemovedResponse;
+      if (senderCardRemovedResponse?.result.status === Response.ERROR)
+        return senderCardRemovedResponse as UserCardWithCardResponse;
 
       // Add card to recipient's collection
       const recipient = recipientResponse.result.user;
@@ -1222,7 +1225,7 @@ export const getUserCollectionHandler = async ({
 export const addCardToCollectionHandler = async ({
   ctx,
   input,
-}: Params<AddCardToCollectionInputType>): Promise<UserCardResponse> => {
+}: Params<AddCardToCollectionInputType>): Promise<UserCardWithCardResponse> => {
   try {
     const handlerId = 'addCardToCollectionHandler';
     const { userId, cardId, quantity = 1, isFoil = false } = input;

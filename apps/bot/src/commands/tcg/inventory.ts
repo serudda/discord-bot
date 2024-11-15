@@ -1,5 +1,4 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, configService, Response } from '~/api';
+import { api, configService, ErrorMessages, Response } from '~/api';
 import { inventoryMsg } from '~/messages';
 import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
@@ -15,20 +14,25 @@ const command = {
 
       // Check if user exists
       if (!discordId) {
-        await interaction.editReply(ErrorMessages.UserNotFound);
+        await interaction.editReply(ErrorMessages.User.NoUser);
         return;
       }
 
-      const response = await api.user.getInventory.query({ discordId });
+      const getInventoryResponse = await api.user.getInventory.query({ discordId });
 
-      if (response?.result.status === Response.ERROR) {
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+      if (getInventoryResponse?.result.status === Response.ERROR) {
+        await interaction.editReply(getInventoryResponse.result.error.message);
         return;
       }
 
       // Check if user has coins
-      if (!response?.result || !response.result.coins || !response.result.gems || !response.result.packs) {
-        await interaction.editReply(ErrorMessages.NoCoins);
+      if (
+        !getInventoryResponse?.result ||
+        !getInventoryResponse.result.coins ||
+        !getInventoryResponse.result.gems ||
+        !getInventoryResponse.result.packs
+      ) {
+        await interaction.editReply(ErrorMessages.User.NoCoins);
         return;
       }
 
@@ -37,9 +41,9 @@ const command = {
       const boosterEmoji = await configService.getGlobalConfig<string>('BOOSTER_EMOJI', ':booster:');
       const msg = formatMsg(inventoryMsg.description, {
         userId: discordId,
-        coins: response.result.coins,
-        gems: response.result.gems,
-        packs: response.result.packs.length,
+        coins: getInventoryResponse.result.coins,
+        gems: getInventoryResponse.result.gems,
+        packs: getInventoryResponse.result.packs,
         coinEmoji,
         gemEmoji,
         boosterEmoji,
@@ -62,7 +66,7 @@ const command = {
       }
 
       // Unknown error
-      await interaction.editReply(ErrorMessages.Unknown);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
     }
   },
 };

@@ -1,8 +1,5 @@
 import type { PackCard, UserCard } from '@discord-bot/db';
-import type {
-  BuyPackResponse,
-  OpenPackResponse,
-  PackWithCardsResponse} from '../common';
+import type { BuyPackResponse, OpenPackResponse, PackWithCardsResponse } from '../common';
 import {
   Response,
   TRPCErrorCode,

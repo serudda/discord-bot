@@ -1,7 +1,6 @@
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '../../api';
-import { giveCoinsMsg } from '../../messages';
-import { formatMsg } from '../../utils';
+import { api, ErrorMessages, Response } from '~/api';
+import { giveCoinsMsg } from '~/messages';
+import { formatMsg } from '~/utils';
 import { TRPCClientError } from '@trpc/client';
 import { SlashCommandBuilder, type CommandInteraction } from 'discord.js';
 
@@ -34,35 +33,35 @@ const command = {
 
       // Check if sender is the same as recipient
       if (senderId === recipientId) {
-        await interaction.editReply(ErrorMessages.GiveCoinsRecipientEqualsSender);
+        await interaction.editReply(ErrorMessages.User.GiveCoinsRecipientEqualsSender);
         return;
       }
 
       // Check if user exists
       if (!recipientId) {
-        await interaction.editReply(ErrorMessages.UserNotFound);
+        await interaction.editReply(ErrorMessages.User.NoUser);
         return;
       }
 
       const response = await api.card.giveCoins.mutate({ recipientId, senderId, amount: parseInt(coins) });
 
       if (response?.result.status === Response.ERROR) {
-        await interaction.editReply(ErrorMessages[response.result.message as ErrorCode]);
+        await interaction.editReply(response.result.error.message);
         return;
       } else {
         const msg = formatMsg(giveCoinsMsg.description, {
           coins,
           senderId,
           recipientId,
-          balance: response?.result.coins as number,
+          balance: response?.result.coins,
         });
         await interaction.editReply(msg);
       }
 
       return;
     } catch (error) {
-      if (error instanceof TRPCClientError) await interaction.editReply(ErrorMessages[error.message as ErrorCode]);
-      await interaction.editReply(ErrorMessages.Unknown);
+      if (error instanceof TRPCClientError) await interaction.editReply(error.message);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
       return;
     }
   },

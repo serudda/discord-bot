@@ -6,6 +6,7 @@ import {
   getUserByEmailHandler,
   getUserByIdHandler,
   getUserByUsernameHandler,
+  getUserCardByNumberHandler,
   getUserCoinsHandler,
   getUserGemsHandler,
   getUserInventoryHandler,
@@ -24,6 +25,7 @@ import {
   getUserByEmailInput,
   getUserByIdInput,
   getUserByUsernameInput,
+  getUserCardByNumberInput,
   getUserCoinsInput,
   getUserGemsInput,
   getUserInventoryInput,
@@ -60,6 +62,10 @@ export const userRouter = createTRPCRouter({
   getPacks: publicProcedure
     .input(getUserPacksInput)
     .query(async ({ ctx, input }) => getUserPacksHandler({ ctx, input })),
+
+  getUserCardByNumber: publicProcedure
+    .input(getUserCardByNumberInput)
+    .query(async ({ ctx, input }) => getUserCardByNumberHandler({ ctx, input })),
 
   getInventory: publicProcedure
     .input(getUserInventoryInput)

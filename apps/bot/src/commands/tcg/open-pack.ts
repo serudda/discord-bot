@@ -1,6 +1,5 @@
 import type { Card, UserCard } from '@discord-bot/db';
-import { ErrorMessages, type ErrorCode } from '@discord-bot/error-handler';
-import { api, Response } from '~/api';
+import { api, ErrorMessages, Response } from '~/api';
 import { BG_IMG_URL, FOIL_IMG_URL, RESULT_OPEN_PACK_IMG_NAME } from '~/common';
 import { wonderPickButton, wonderPickButtonId } from '~/events/collectors';
 import { openPackMsg } from '~/messages';
@@ -29,21 +28,21 @@ const command = {
       const userResponse = await api.user.getByDiscordId.query({ discordId });
 
       if (userResponse?.result?.status === Response.ERROR) {
-        await interaction.editReply(ErrorMessages[userResponse.result.message as ErrorCode]);
+        await interaction.editReply(userResponse.result.error.message);
         return;
       }
 
-      const userId = userResponse?.result.user?.id as string;
-      const username = userResponse?.result.user?.username as string;
+      const userId = userResponse?.result.user?.id;
+      const username = userResponse?.result.user?.username;
       const openPackResponse = await api.pack.openPack.mutate({ userId });
 
       if (openPackResponse?.result?.status === Response.ERROR) {
-        await interaction.editReply(ErrorMessages[openPackResponse.result.message as ErrorCode]);
+        await interaction.editReply(openPackResponse.result.error.message);
         return;
       }
 
       const userCards = openPackResponse?.result?.newUserCards as Array<UserCardWithCard>;
-      const packs = openPackResponse?.result?.amountOfPacks as number;
+      const packs = openPackResponse?.result?.amountOfPacks;
       const imageUrls: Array<string> = [];
       const foilFlags: Array<boolean> = [];
 
@@ -79,7 +78,7 @@ const command = {
     } catch (error) {
       console.error('Error opening a pack', error);
       if (error instanceof TRPCClientError) await interaction.editReply(error);
-      await interaction.editReply(ErrorMessages.Unknown);
+      await interaction.editReply(ErrorMessages.Common.Unknown);
     }
   },
 };

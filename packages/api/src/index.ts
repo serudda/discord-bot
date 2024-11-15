@@ -3,7 +3,7 @@ import { type inferRouterInputs, type inferRouterOutputs } from '@trpc/server';
 
 export * from './common';
 export { appRouter, type AppRouter } from './root';
-export { configService } from './services/configService';
+export { configService, ErrorCodes, ErrorMessages } from './services';
 export { createTRPCContext } from './trpc';
 
 /**
